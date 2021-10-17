@@ -457,9 +457,11 @@ def main():
     ## index, 0 will give you the python filename being executed. Any index after that are the arguments passed.
     gpu= sys.argv[1]
     trainOrPredict= sys.argv[2]
+    seed=int(sys.argv[3])
+    np.random.seed(seed)
 
-    if(len(sys.argv)>2):
-        imageDir= sys.argv[3]
+    if(len(sys.argv)>3):
+        imageDir= sys.argv[4]
 
     assert trainOrPredict in ['train', 'predict']
 
@@ -488,6 +490,7 @@ def main():
         model.load_state_dict(torch.load("/gpfs3/well/lindgren/users/swf744/git/pytorch-unet/weights/weightsRandomTiles.dat"))
         model.eval()
         results = predict(model,imageDir,device)
+
 
 
 if __name__ == "__main__":
