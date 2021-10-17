@@ -140,11 +140,13 @@ def get_training():
     image_datasets = {
         'train': train_set, 'val': val_set
     }
-    
+
+    sample_size_train = 200
+    sample_size_val = 20
     batch_size = 2
     
-    samplie_train = RandomSampler(train_set, batch_size, 1024, False)
-    samplie_val = RandomSampler(val_set, batch_size, 1024, True)
+    samplie_train = RandomSampler(train_set, sample_size_train, 1024, False, 0)
+    samplie_val = RandomSampler(val_set, sample_size_val, 1024, True, 0)
 
     dataloaders = {
         'train': DataLoader(train_set, batch_size=batch_size, num_workers=0, sampler=samplie_train),
@@ -167,12 +169,13 @@ class RandomSampler(Sampler):
 
     # so this has to have the data
 
-    def __init__(self, data_source, batch_size, shape, val):
+    def __init__(self, data_source, sample_size, shape, val, counter):
 
         self.data_source = data_source
-        self.batch_size = batch_size
+        self.sample_size = sample_size
         self.shape = shape
         self.val = val
+        self.counter = counter
 
     # this has to provide the iterator , the iterator will use the __getitem__ method
 
@@ -200,7 +203,7 @@ class RandomSampler(Sampler):
 
         listie=[]
 
-        for batch_idx in range(self.batch_size):
+        for sample_idx in range(self.sample_size):
 
             y0, x0 = (0,0)
             y1, x1 = (0,0)
@@ -225,6 +228,12 @@ class RandomSampler(Sampler):
                 y1, x1 = y0 + wdw_H, x0 + wdw_W
                 
             listie.append((rand_var,y0,x0))
+            
+        if not self.val:
+            self.counter += 1
+            print("My counter:")
+            print(self.counter)
+
 
         return(iter(listie))
 
@@ -472,11 +481,11 @@ def main():
         optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
         exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=0.1)
         model = train_model(model, training_data, device, optimizer_ft, exp_lr_scheduler, num_epochs=60)
-        torch.save(model.state_dict(),"/gpfs3/well/lindgren/users/swf744/git/pytorch-unet/weights/weights.dat")
+        torch.save(model.state_dict(),"/gpfs3/well/lindgren/users/swf744/git/pytorch-unet/weights/weightsRandomTiles.dat")
     else:
 
         # load image
-        model.load_state_dict(torch.load("/gpfs3/well/lindgren/users/swf744/git/pytorch-unet/weights/weights.dat"))
+        model.load_state_dict(torch.load("/gpfs3/well/lindgren/users/swf744/git/pytorch-unet/weights/weightsRandomTiles.dat"))
         model.eval()
         results = predict(model,imageDir,device)
 
