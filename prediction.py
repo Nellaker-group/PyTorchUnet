@@ -9,8 +9,6 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 import time
 import copy
-#import model1
-import simulationV2
 import numpy as np
 import cv2
 import sys
@@ -21,9 +19,10 @@ import matplotlib.pyplot as plt
 import random
 from torch.utils.data.sampler import Sampler
 
+from Dataset import GetDataSeqTiles, GetDataRandomTiles
+from Sampler import RandomSampler
 
-
-def predict(model, imageDir, device):
+def predict(model, pathDir, imageDir, device):
 
     print("DO I PREDICT!?")
 
@@ -34,11 +33,21 @@ def predict(model, imageDir, device):
         #transforms.Normalize([0.5], [0.5])
     ])
 
-    pred_set = GetData("predict", imageDir, transform=trans)
+    sample_size_pred = len(os.listdir(pathDir))
+
+    if imageDir:
+        pred_set = GetDataSeqTiles("predict", pathDir, transform=trans)
+    else:
+        pred_set = GetDataRandomTiles("predict", pathDir, transform=trans)
     
     batch_size = 2
-    
-    test_loader = DataLoader(pred_set, batch_size=batch_size, shuffle=True, num_workers=0)
+
+    samplie_pred = RandomSampler(pred_set, sample_size_pred, 1024, 0)
+
+    if imageDir:
+        test_loader = DataLoader(pred_set, batch_size=batch_size, shuffle=True, num_workers=0)
+    else:
+        test_loader = DataLoader(pred_set, batch_size=batch_size, num_workers=0, sampler=samplie_pred)
 
     # Get the first batch
     inputs, labels = next(iter(test_loader))
@@ -51,18 +60,18 @@ def predict(model, imageDir, device):
     pred = torch.sigmoid(pred)
     pred = pred.data.cpu().numpy()
 
-    files = os.listdir(imageDir)
+    files = os.listdir(pathDir)
 
 
     for i in range(0,len(pred)):
         newFile = files[i].replace(".png","_mask.png")
-        newFile = files[i].replace(".jpg","_mask.png")
+        newFile = newFile.replace(".jpg","_mask.png")
 
         newPred = pred[i][0]
     
         newPred[newPred > 0.5] = 255
         newPred[newPred <= 0.5] = 0
-        plt.imsave(imageDir+newFile, newPred)
+        plt.imsave(pathDir+newFile, newPred)
 
     return pred
 

@@ -4,10 +4,10 @@ from torchvision import transforms, datasets, models
 import numpy as np
 from torch.utils.data.sampler import Sampler
 
-from Dataset import GetData
+from Dataset import GetDataSeqTiles, GetDataRandomTiles
 from Sampler import RandomSampler
 
-def get_dataloader():
+def get_dataloader(pathDir,imageDir):
 
     # use the same transformations for train/val in this example
     trans = transforms.Compose([
@@ -16,9 +16,20 @@ def get_dataloader():
         #transforms.Normalize([0.5], [0.5])
     ])
 
-    # read in shuffled data
-    train_set = GetData("train", transform=trans)
-    val_set = GetData("validation", transform=trans)
+    trainPathDir=pathDir + "train/"
+    valPathDir=pathDir + "val/"
+
+    print("imageDir:")
+    print(imageDir)
+    
+    if imageDir:
+        # read in data
+        train_set = GetDataSeqTiles("train", pathDir=trainPathDir, transform=trans)
+        val_set = GetDataSeqTiles("validation", pathDir=valPathDir, transform=trans)
+    else:
+        # read in data
+        train_set = GetDataRandomTiles("train", pathDir=trainPathDir, transform=trans)
+        val_set = GetDataRandomTiles("validation", pathDir=valPathDir, transform=trans)
     
     image_datasets = {
         'train': train_set, 'val': val_set
@@ -28,8 +39,8 @@ def get_dataloader():
     sample_size_val = 20
     batch_size = 2
     
-    samplie_train = RandomSampler(train_set, sample_size_train, 1024, False, 0)
-    samplie_val = RandomSampler(val_set, sample_size_val, 1024, True, 0)
+    samplie_train = RandomSampler(train_set, sample_size_train, 1024, 0)
+    samplie_val = RandomSampler(val_set, sample_size_val, 1024, 0)
 
     dataloaders = {
         'train': DataLoader(train_set, batch_size=batch_size, num_workers=0, sampler=samplie_train),

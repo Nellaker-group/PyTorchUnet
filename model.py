@@ -9,8 +9,6 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 import time
 import copy
-#import model1
-import simulationV2
 import numpy as np
 import cv2
 import sys

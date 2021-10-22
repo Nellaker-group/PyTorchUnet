@@ -13,12 +13,11 @@ class RandomSampler(Sampler):
 
     # so this has to have the data
 
-    def __init__(self, data_source, sample_size, shape, val, counter):
+    def __init__(self, data_source, sample_size, shape, counter):
 
         self.data_source = data_source
         self.sample_size = sample_size
         self.shape = shape
-        self.val = val
         self.counter = counter
 
     # this has to provide the iterator , the iterator will use the __getitem__ method
@@ -45,6 +44,16 @@ class RandomSampler(Sampler):
         normalize3 = lambda x: (x - _mean3) / (_std3 + 1e-10)
         normalize4 = lambda x: (x - _mean4) / (_std4 + 1e-10)
 
+        # to make sure we do not get np.random.randint(0, 0) which gives an error
+        rangeH = max(H - wdw_H,1)
+        rangeW = max(W - wdw_W,1)
+        rangeH2 = max(H2 - wdw_H,1)
+        rangeW2 = max(W2 - wdw_W,1)
+        rangeH3 = max(H3 - wdw_H,1)
+        rangeW3 = max(W3 - wdw_W,1)
+        rangeH4 = max(H4 - wdw_H,1)
+        rangeW4 = max(W4 - wdw_W,1)
+
         listie=[]
 
         for sample_idx in range(self.sample_size):
@@ -53,31 +62,21 @@ class RandomSampler(Sampler):
             y1, x1 = (0,0)
             rand_var = np.random.randint(0,4)
             if rand_var == 0:
-                y0, x0 = np.random.randint(0, H - wdw_H), np.random.randint(0, W - wdw_W)
+                y0, x0 = np.random.randint(0, rangeH), np.random.randint(0, rangeW)
                 y1, x1 = y0 + wdw_H, x0 + wdw_W
             if rand_var == 1:
-                if self.val == True:
-                    y0, x0 =  np.random.randint(0, H2 - wdw_H), 0
-                else:
-                    y0, x0 = np.random.randint(0, H2 - wdw_H), np.random.randint(0, W2 - wdw_W)
+                y0, x0 = np.random.randint(0, rangeH2), np.random.randint(0, rangeW2)
                 y1, x1 = y0 + wdw_H, x0 + wdw_W
             if rand_var == 2:
-                if self.val == True:
-                    y0, x0 = np.random.randint(0, H3 - wdw_H), np.random.randint(0, W3 - wdw_W)
-                else:
-                    y0, x0 = np.random.randint(0, H3 - wdw_H), np.random.randint(0, W3 - wdw_W)
+                y0, x0 = np.random.randint(0, rangeH3), np.random.randint(0, rangeW3)
                 y1, x1 = y0 + wdw_H, x0 + wdw_W
             if rand_var == 3:
-                y0, x0 = np.random.randint(0, H4 - wdw_H), np.random.randint(0, W4 - wdw_W)
+                y0, x0 = np.random.randint(0, rangeH4), np.random.randint(0, rangeW4)
                 y1, x1 = y0 + wdw_H, x0 + wdw_W
                 
             listie.append((rand_var,y0,x0))
-            
-        if not self.val:
+                        
             self.counter += 1
-            print("My counter:")
-            print(self.counter)
-
 
         return(iter(listie))
 

@@ -1,5 +1,4 @@
-from collections import defaultdict
-#from loss import dice_loss
+#from collections import defaultdict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,19 +6,10 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, datasets, models
 import torch.optim as optim
 from torch.optim import lr_scheduler
-import time
-import copy
-#import model1
-import simulationV2
-import numpy as np
-import cv2
 import sys
 import os
-import math
-import matplotlib
-import matplotlib.pyplot as plt
-import random
 from torch.utils.data.sampler import Sampler
+import numpy as np
 
 import loss
 import Sampler
@@ -53,15 +43,24 @@ def select_gpu(whichGPU):
     return device
 
 def main():
+    
+    print("len is:")
+    print(len(sys.argv))
 
     ## index, 0 will give you the python filename being executed. Any index after that are the arguments passed.
-    gpu= sys.argv[1]
-    trainOrPredict= sys.argv[2]
+    if(len(sys.argv)==1):
+        print("1. which GPU (int), 2. 'train'/'predict', 3. seed (int), 4. path of directory for data (string), 5. if directory with images (boolean)")
+        sys.exit("")
+
+    gpu=sys.argv[1]
+    trainOrPredict=sys.argv[2]
     seed=int(sys.argv[3])
     np.random.seed(seed)
 
-    if(len(sys.argv)>3):
-        imageDir= sys.argv[4]
+    pathDir=sys.argv[4]
+    imageDir=int(sys.argv[5])
+    assert imageDir == 0 or imageDir==1
+    imageDir=bool(imageDir)
 
     print("IT IS ASSUMED THAT THIS SCRIPT IS EXECUTED FROM THE DIRECTORY OF THE FILE")
 
@@ -82,7 +81,7 @@ def main():
     print(count_parameters(model))
 
     if(trainOrPredict == "train"):
-        training_data = get_dataloader()
+        training_data = get_dataloader(pathDir,imageDir)
         optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
         exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=0.1)
         model = train_model(model, training_data, device, optimizer_ft, exp_lr_scheduler, num_epochs=60)
@@ -94,9 +93,9 @@ def main():
     else:
 
         # load image
-        model.load_state_dict(torch.load("/gpfs3/well/lindgren/users/swf744/git/pytorch-unet/weights/weightsRandomTiles.dat"))
+        model.load_state_dict(torch.load("weights/weightsRandomTiles.dat"))
         model.eval()
-        results = predict(model,imageDir,device)
+        results = predict(model,pathDir,imageDir,device)
 
 if __name__ == "__main__":
     main()
