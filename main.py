@@ -10,6 +10,7 @@ import sys
 import os
 from torch.utils.data.sampler import Sampler
 import numpy as np
+from datetime import datetime
 
 import loss
 import Sampler
@@ -49,7 +50,7 @@ def main():
 
     ## index, 0 will give you the python filename being executed. Any index after that are the arguments passed.
     if(len(sys.argv)==1):
-        print("1. which GPU (int), 2. 'train'/'predict', 3. seed (int), 4. path of directory for data (string), 5. if directory with images (boolean)")
+        print("1. which GPU (int), 2. 'train'/'predict', 3. seed (int), 4. path of directory for data (string), 5. if directory with images (boolean), 6 epochs (int)")
         sys.exit("")
 
     gpu=sys.argv[1]
@@ -61,6 +62,9 @@ def main():
     imageDir=int(sys.argv[5])
     assert imageDir == 0 or imageDir==1
     imageDir=bool(imageDir)
+
+    noEpochs=int(sys.argv[6])
+    
 
     print("IT IS ASSUMED THAT THIS SCRIPT IS EXECUTED FROM THE DIRECTORY OF THE FILE")
 
@@ -80,16 +84,20 @@ def main():
     print("N parameters:")
     print(count_parameters(model))
 
+    date = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+
     if(trainOrPredict == "train"):
         training_data = get_dataloader(pathDir,imageDir)
         optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
         exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=0.1)
-        model = train_model(model, training_data, device, optimizer_ft, exp_lr_scheduler, num_epochs=60)
+        model = train_model(model, training_data, device, optimizer_ft, exp_lr_scheduler, num_epochs=noEpochs)
         if os.path.isdir('weights/'): 
             torch.save(model.state_dict(),"weights/weightsRandomTiles.dat")
+            torch.save(model.state_dict(),"weights/weightsRandomTiles_epochs"+noEpochs+"time"+date+".dat")
         else:
             os.mkdir('weights/') 
             torch.save(model.state_dict(),"weights/weightsRandomTiles.dat")
+            torch.save(model.state_dict(),"weights/weightsRandomTiles_epochs"+noEpochs+"time"+date+".dat")
     else:
 
         # load image
