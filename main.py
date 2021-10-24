@@ -50,7 +50,8 @@ def main():
 
     ## index, 0 will give you the python filename being executed. Any index after that are the arguments passed.
     if(len(sys.argv)==1):
-        print("1. which GPU (int), 2. 'train'/'predict', 3. seed (int), 4. path of directory for data (string), 5. if directory with images (boolean), 6 epochs (int)")
+        print("1. which GPU (int), 2. 'train'/'predict', 3. seed (int), 4. path of directory for data (string), 5. if directory with images (boolean), 6 epochs (int - only for training)")
+        print("7. gamma (for decaying learning rate - only for training) , 8. path of weights (only for predicting)")
         sys.exit("")
 
     gpu=sys.argv[1]
@@ -65,8 +66,8 @@ def main():
 
     noEpochs=int(sys.argv[6])
 
-    gamma= sys.argv[7]
-    
+    gamma=sys.argv[7]
+
 
     print("IT IS ASSUMED THAT THIS SCRIPT IS EXECUTED FROM THE DIRECTORY OF THE FILE")
 
@@ -101,9 +102,9 @@ def main():
             torch.save(model.state_dict(),"weights/weightsRandomTiles.dat")
             torch.save(model.state_dict(),"weights/weightsRandomTiles_epochs"+str(noEpochs)+"time"+date+"gamma"+gamma+".dat")
     else:
-
+        predictWeights= sys.argv[8] 
         # load image
-        model.load_state_dict(torch.load("weights/weightsRandomTiles.dat"))
+        model.load_state_dict(torch.load(predictWeights))
         model.eval()
         results = predict(model,pathDir,imageDir,device)
 

@@ -88,9 +88,6 @@ class GetDataSeqTiles(Dataset):
                 mask_list.append(mask2)
                 # loop over the image and put the image into a numpy ndarray                                                                
                 # each image is a (1024x1024x3) numpy array, where 3 is the number of colour channels    
-
-            print("im2:")
-            print(im2)
             image_array[count,0:shape,0:shape,] = normalize(im2)
             count += 1
 
