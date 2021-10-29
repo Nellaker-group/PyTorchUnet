@@ -82,3 +82,66 @@ class RandomSampler(Sampler):
 
     def __len__(self):
         return len(self.data_source)
+
+
+
+
+class SeqSampler(Sampler):
+    """Samples elements randomly, without replacement.
+    Arguments:
+        data_source (Dataset): dataset to sample from
+    """
+
+    # so this has to have the data
+
+    def __init__(self, data_source, sample_size, shape, counter):
+
+        self.data_source = data_source
+        self.sample_size = sample_size
+        self.shape = shape
+        self.counter = counter
+
+    # this has to provide the iterator , the iterator will use the __getitem__ method
+
+    def __iter__(self):        
+
+        imgs = self.data_source.input_images[0]
+        imgs2 = self.data_source.input_images[1]
+        imgs3 = self.data_source.input_images[2]
+        imgs4 = self.data_source.input_images[3]
+
+        print("imgs:")
+        print(np.shape(imgs))
+        print(imgs.__class__)
+    
+        l = len(imgs)
+        l2 = len(imgs2)
+        l3 = len(imgs3)
+        l4 = len(imgs4)
+
+        listie=[]
+
+        for sample_idx in range(self.sample_size):
+
+            rand_var = np.random.randint(0,4)
+            i = -1
+            if rand_var == 0:
+                i = np.random.randint(0, l)
+            if rand_var == 1:
+                i = np.random.randint(0, l2)
+            if rand_var == 2:
+                i = np.random.randint(0, l3)
+            if rand_var == 3:
+                i = np.random.randint(0, l4)
+                
+            listie.append((rand_var,i))
+                        
+            self.counter += 1
+
+        return(iter(listie))
+
+    def __len__(self):
+        return len(self.data_source)
+
+    def __len__(self):
+        return len(self.data_source)

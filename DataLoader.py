@@ -3,9 +3,10 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, datasets, models
 import numpy as np
 from torch.utils.data.sampler import Sampler
+import os
 
-from Dataset import GetDataSeqTiles, GetDataRandomTiles
-from Sampler import RandomSampler
+from Dataset import GetDataSeqTilesArray, GetDataRandomTilesArray, GetDataSeqTilesFolder
+from Sampler import RandomSampler, SeqSampler
 
 def get_dataloader(pathDir,imageDir):
 
@@ -21,31 +22,65 @@ def get_dataloader(pathDir,imageDir):
 
     print("imageDir:")
     print(imageDir)
+
+    files = os.listdir(trainPathDir)
+    npy = False
+    for file in files:
+        npy = file.endswith("npy")
     
-    if imageDir:
+    if imageDir and npy:
         # read in data
-        train_set = GetDataSeqTiles("train", pathDir=trainPathDir, transform=trans)
-        val_set = GetDataSeqTiles("validation", pathDir=valPathDir, transform=trans)
+        train_set = GetDataSeqTilesArray("train", pathDir=trainPathDir, transform=trans)
+        val_set = GetDataSeqTilesArray("validation", pathDir=valPathDir, transform=trans)
+    elif imageDir:
+        # read in data
+        train_set = GetDataSeqTilesFolder("train", pathDir=trainPathDir, transform=trans)
+        val_set = GetDataSeqTilesFolder("validation", pathDir=valPathDir, transform=trans)
     else:
         # read in data
-        train_set = GetDataRandomTiles("train", pathDir=trainPathDir, transform=trans)
-        val_set = GetDataRandomTiles("validation", pathDir=valPathDir, transform=trans)
+        train_set = GetDataRandomTilesArray("train", pathDir=trainPathDir, transform=trans)
+        val_set = GetDataRandomTilesArray("validation", pathDir=valPathDir, transform=trans)
     
     image_datasets = {
         'train': train_set, 'val': val_set
     }
 
-    sample_size_train = 200
+    sample_size_train = 400
     sample_size_val = 20
     batch_size = 2
-    
-    samplie_train = RandomSampler(train_set, sample_size_train, 1024, 0)
-    samplie_val = RandomSampler(val_set, sample_size_val, 1024, 0)
 
-    dataloaders = {
-        'train': DataLoader(train_set, batch_size=batch_size, num_workers=0, sampler=samplie_train),
-        'val': DataLoader(val_set, batch_size=batch_size, num_workers=0, sampler=samplie_val)
-    }
+    dataloaders = {}
+
+    if imageDir and npy:
+        # read in data
+        samplie_train = SeqSampler(train_set, sample_size_train, 1024, 0)
+        samplie_val = SeqSampler(val_set, sample_size_val, 1024, 0)
+        dataloaders = {
+            'train': DataLoader(train_set, batch_size=batch_size, num_workers=0, sampler=samplie_train),
+            'val': DataLoader(val_set, batch_size=batch_size, num_workers=0, sampler=samplie_val)
+        }
+
+    elif imageDir:
+        # read in data
+        samplie_train = SeqSampler(train_set, sample_size_train, 1024, 0)
+        samplie_val = SeqSampler(val_set, sample_size_val, 1024, 0)
+        dataloaders = {
+            'train': DataLoader(train_set, batch_size=batch_size, num_workers=0, sampler=samplie_train),
+            'val': DataLoader(val_set, batch_size=batch_size, num_workers=0, sampler=samplie_val)
+        }
+
+    else:
+        # read in data
+        samplie_train = RandomSampler(train_set, sample_size_train, 1024, 0)
+        samplie_val = RandomSampler(val_set, sample_size_val, 1024, 0)
+        dataloaders = {
+            'train': DataLoader(train_set, batch_size=batch_size, num_workers=0, sampler=samplie_train),
+            'val': DataLoader(val_set, batch_size=batch_size, num_workers=0, sampler=samplie_val)
+        }
+
+
+    
+
     
     return dataloaders
 

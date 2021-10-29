@@ -27,9 +27,17 @@ def double_conv(in_channels, out_channels):
         nn.ReLU(inplace=True)
     )   
 
+def single_conv(in_channels, out_channels):
+    return nn.Sequential(
+        nn.Conv2d(in_channels, out_channels, 3, padding=1),
+        nn.ReLU(inplace=True)
+    )
+
+
 def dilate(in_channels, out_channels, dilation):
     return nn.Conv2d(in_channels, out_channels, dilation)     
 
+# UNet with dilations as implemented by Craig
 class UNet(nn.Module):
     def __init__(self, n_class):
         super().__init__()                
@@ -37,16 +45,22 @@ class UNet(nn.Module):
         self.maxpool = nn.MaxPool2d(2)
         self.dconv_down2 = double_conv(44, 44*2)
         self.dconv_down3 = double_conv(44*2, 44*4)       
-        self.dilate1 = nn.Conv2d(44*4, 44*8, 3, dilation=1)     
-        self.dilate2 = nn.Conv2d(44*8, 44*8, 3, dilation=2)     
-        self.dilate3 = nn.Conv2d(44*8, 44*8, 3, dilation=4)     
-        self.dilate4 = nn.Conv2d(44*8, 44*8, 3, dilation=8)     
-        self.dilate5 = nn.Conv2d(44*8, 44*8, 3, dilation=16)     
-        self.dilate6 = nn.Conv2d(44*8, 44*8, 3, dilation=32)     
+        # emil added padding
+        self.dilate1 = nn.Conv2d(44*4, 44*8, 3, dilation=1, padding=1)     
+        self.dilate2 = nn.Conv2d(44*8, 44*8, 3, dilation=2, padding=2)     
+        self.dilate3 = nn.Conv2d(44*8, 44*8, 3, dilation=4, padding=4)     
+        self.dilate4 = nn.Conv2d(44*8, 44*8, 3, dilation=8, padding=8)     
+        self.dilate5 = nn.Conv2d(44*8, 44*8, 3, dilation=16, padding=16)     
+        self.dilate6 = nn.Conv2d(44*8, 44*8, 3, dilation=32, padding=32)     
         self.upsample = nn.Upsample(scale_factor=2)        
+
+        self.sconv_up3 = single_conv(44*8, 44*4)
+        self.sconv_up2 = single_conv(44*4, 44*2)
+        self.sconv_up1 = single_conv(44*2, 44)
+
         self.dconv_up3 = double_conv(44*8, 44*4)
-        self.dconv_up2 = double_conv(44*4+44*2, 44*2)
-        self.dconv_up1 = double_conv(44*2+44, 44)        
+        self.dconv_up2 = double_conv(44*4, 44*2)
+        self.dconv_up1 = double_conv(44*2, 44)        
         self.conv_last = nn.Conv2d(44, n_class, 1)
         
         
@@ -66,20 +80,77 @@ class UNet(nn.Module):
         x4 = self.dilate4(x3)
         x5 = self.dilate5(x4)
         x6 = self.dilate6(x5)
-        # I AM NOT SURE HOW TO DO THIS
-        # ASK ABOUT https://github.com/GlastonburyC/Adipocyte-U-net/blob/master/src/models/adipocyte_unet.py
-        # Line 138-145
-        # x = add([x1, x2, x3, x4, x5, x6])        
+        x = x1.add(x2).add(x3).add(x4).add(x5).add(x6)
         x = self.upsample(x)        
+        x = self.sconv_up3(x)
         x = torch.cat([x, conv3], dim=1)        
         x = self.dconv_up3(x)
-        x = self.upsample(x)        
+        x = self.upsample(x)   
+        x = self.sconv_up2(x)     
         x = torch.cat([x, conv2], dim=1)       
         x = self.dconv_up2(x)
         x = self.upsample(x)        
+        x = self.sconv_up1(x)     
         x = torch.cat([x, conv1], dim=1)           
         x = self.dconv_up1(x)        
         out = self.conv_last(x)        
+        return out
+
+
+
+
+
+# UNet originally implemented by Emil without dilations, but stil achieving a good performance
+class orgUNet(nn.Module):
+    def __init__(self, n_class):
+        super().__init__()
+        self.dconv_down1 = double_conv(1, 44)
+        self.maxpool = nn.MaxPool2d(2)
+        self.dconv_down2 = double_conv(44, 44*2)
+        self.dconv_down3 = double_conv(44*2, 44*4)
+        self.dilate1 = nn.Conv2d(44*4, 44*8, 3, dilation=1)
+        self.dilate2 = nn.Conv2d(44*8, 44*8, 3, dilation=2)
+        self.dilate3 = nn.Conv2d(44*8, 44*8, 3, dilation=4)
+        self.dilate4 = nn.Conv2d(44*8, 44*8, 3, dilation=8)
+        self.dilate5 = nn.Conv2d(44*8, 44*8, 3, dilation=16)
+        self.dilate6 = nn.Conv2d(44*8, 44*8, 3, dilation=32)
+        self.upsample = nn.Upsample(scale_factor=2)
+        self.dconv_up3 = double_conv(44*8, 44*4)
+        self.dconv_up2 = double_conv(44*4+44*2, 44*2)
+        self.dconv_up1 = double_conv(44*2+44, 44)
+        self.conv_last = nn.Conv2d(44, n_class, 1)
+
+
+    def forward(self, x):
+        # to convert the Tensor to have the data type of floats
+        x = x.float()
+        #x = torch.reshape(x, (3, 1024, 1024))
+        conv1 = self.dconv_down1(x)
+        x = self.maxpool(conv1)
+        conv2 = self.dconv_down2(x)
+        x = self.maxpool(conv2)
+        conv3 = self.dconv_down3(x)
+        x = self.maxpool(conv3)
+        x1 = self.dilate1(x)
+        x2 = self.dilate2(x1)
+        x3 = self.dilate3(x2)
+        x4 = self.dilate4(x3)
+        x5 = self.dilate5(x4)
+        x6 = self.dilate6(x5)
+        # I AM NOT SURE HOW TO DO THIS                                                                                                          
+        # ASK ABOUT https://github.com/GlastonburyC/Adipocyte-U-net/blob/master/src/models/adipocyte_unet.py
+        # Line 138-145                                                             
+        # x = add([x1, x2, x3, x4, x5, x6])
+        x = self.upsample(x)
+        x = torch.cat([x, conv3], dim=1)
+        x = self.dconv_up3(x)
+        x = self.upsample(x)
+        x = torch.cat([x, conv2], dim=1)
+        x = self.dconv_up2(x)
+        x = self.upsample(x)
+        x = torch.cat([x, conv1], dim=1)
+        x = self.dconv_up1(x)
+        out = self.conv_last(x)
         return out
 
 
