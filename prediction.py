@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import random
 from torch.utils.data.sampler import Sampler
 
-from Dataset import GetDataSeqTilesArray, GetDataRandomTilesArray, GetDataSeqTilesFolder
+from Dataset import GetDataSeqTilesArray, GetDataTilesArray, GetDataSeqTilesFolder
 from Sampler import RandomSampler, SeqSampler
 
 def predict(model, pathDir, imageDir, device):
@@ -38,7 +38,7 @@ def predict(model, pathDir, imageDir, device):
     if imageDir:
         pred_set = GetDataSeqTilesFolder("predict", pathDir, transform=trans)
     else:
-        pred_set = GetDataRandomTilesArray("predict", pathDir, transform=trans)
+        pred_set = GetDataTilesArray("predict", pathDir, transform=trans)
     
     batch_size = 2
 

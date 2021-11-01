@@ -12,7 +12,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 
-class GetDataRandomTilesArray(Dataset):
+class GetDataTilesArray(Dataset):
 
     def __init__(self, whichData, pathDir="", transform=None):
 
@@ -23,13 +23,23 @@ class GetDataRandomTilesArray(Dataset):
         mask_list = []        
         image_list = []        
         self.whichData = whichData
+        files.sort()
+        
+        # Emil
+        self.counter=0
     
         for file in files:
             if "_mask.npy" in file:
                 continue
+
+            # emil
+            print("file:")
+            print(file)
+
+
             im = np.load(pathDir + file)
 
-            if(whichData=="predict"):
+            if(self.whichData=="predict"):
                 meanIm, stdIm = np.mean(im), np.std(im)
                 normalize = lambda x: (x - meanIm) / (stdIm + 1e-10)
                 image_list.append(normalize(im))
@@ -55,6 +65,21 @@ class GetDataRandomTilesArray(Dataset):
         shape = 1024
         image = self.input_images[i][x:(x+shape),y:(y+shape)] 
         mask = self.target_masks[i][x:(x+shape),y:(y+shape)] 
+
+        assert np.shape(image) == (1024,1024)
+        assert np.shape(mask) == (1024,1024)
+
+        # crops from first run
+        if self.counter < 10:
+            if self.whichData=="train":
+                plt.imsave("crops/train_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
+                plt.imsave("crops/train_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
+            else:
+                plt.imsave("crops/val_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
+                plt.imsave("crops/val_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
+
+            self.counter+=1
+
         if self.transform:
             image = self.transform(image)
             mask = self.transform(mask)
@@ -73,6 +98,7 @@ class GetDataSeqTilesArray(Dataset):
         image_list = []        
         big_mask_list = []
         big_image_list = []
+        files.sort()
 
         count = 0
         # check that there is an even number of files in the folder
@@ -84,11 +110,16 @@ class GetDataSeqTilesArray(Dataset):
 
         # Emil
         self.whichData = whichData
+        self.counter=0
     
         for file in files:
             if "_mask.npy" in file:
                 continue
             
+            # emil
+            print("file:")
+            print(file)
+
             im = np.load(pathDir + file)
 
             if(whichData!="predict"):
@@ -115,11 +146,6 @@ class GetDataSeqTilesArray(Dataset):
                     else:
                         image_list.append(im[x:(x+shape),y:(y+shape),])
                         mask_list.append(mask[x:(x+shape),y:(y+shape),])
-
-            print("I AM HERE:")
-            print(np.asarray(mask_list).__class__)
-            print(np.shape(np.asarray(mask_list)))
-
             big_mask_list.append(np.asarray(mask_list))
             big_image_list.append(np.asarray(image_list))
 
@@ -134,11 +160,22 @@ class GetDataSeqTilesArray(Dataset):
         i,j = idx
         image = self.input_images[i][j]
         mask = self.target_masks[i][j]
+
+        assert np.shape(image) == (1024,1024)
+        assert np.shape(mask) == (1024,1024)
+
+        if self.counter < 10:
+            print("HERE:")
+            print("cropsSeq/"+str(i)+"_"+str(j)+".png")
+            plt.imsave("cropsSeq/"+str(i)+"_"+str(j)+".png", image)
+            plt.imsave("cropsSeq/"+str(i)+"_"+str(j)+"_mask.png", mask)
+            self.counter+=1
+            
+
         if self.transform:
             image = self.transform(image)
             mask = self.transform(mask)
         return [image, mask]
-
 
 
 class GetDataSeqTilesFolder(Dataset):
@@ -154,6 +191,11 @@ class GetDataSeqTilesFolder(Dataset):
         image_list = []        
         big_mask_list = []        
         big_image_list = []        
+        files.sort()
+
+        # Emil
+        self.whichData = whichData
+        self.counter=0
 
         for file in files:
             if "_mask.png" in file:
@@ -188,6 +230,15 @@ class GetDataSeqTilesFolder(Dataset):
     def __getitem__(self, idx):
         image = self.input_images[idx]
         mask = self.target_masks[idx]
+
+        if self.counter < 10:
+            print("HERE:")
+            print("cropsFolder/"+str(idx)+".png")
+
+            plt.imsave("cropsFolder/"+str(idx)+".png", image)
+            plt.imsave("cropsFolder/"+str(idx)+"_mask.png", mask)
+            self.counter+=1
+            
         if self.transform:
             image = self.transform(image)
             mask = self.transform(mask)

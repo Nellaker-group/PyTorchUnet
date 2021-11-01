@@ -94,7 +94,9 @@ def main():
         training_data = get_dataloader(pathDir,imageDir)
         optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
         exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=float(gamma))
-        model = train_model(model, training_data, device, optimizer_ft, exp_lr_scheduler, num_epochs=noEpochs)
+
+        f=open("log_epochs"+str(noEpochs)+"time"+date+"gamma"+gamma+".log","w")
+        model = train_model(model, training_data, device, optimizer_ft, exp_lr_scheduler, f, num_epochs=noEpochs)
         if os.path.isdir('weights/'): 
             torch.save(model.state_dict(),"weights/weightsRandomTiles.dat")
             torch.save(model.state_dict(),"weights/weightsRandomTiles_epochs"+str(noEpochs)+"time"+date+"gamma"+gamma+".dat")
@@ -102,6 +104,7 @@ def main():
             os.mkdir('weights/') 
             torch.save(model.state_dict(),"weights/weightsRandomTiles.dat")
             torch.save(model.state_dict(),"weights/weightsRandomTiles_epochs"+str(noEpochs)+"time"+date+"gamma"+gamma+".dat")
+        f.close()
     else:
         predictWeights= sys.argv[8] 
         # load image

@@ -5,8 +5,8 @@ import numpy as np
 from torch.utils.data.sampler import Sampler
 import os
 
-from Dataset import GetDataSeqTilesArray, GetDataRandomTilesArray, GetDataSeqTilesFolder
-from Sampler import RandomSampler, SeqSampler
+from Dataset import GetDataSeqTilesArray, GetDataTilesArray, GetDataSeqTilesFolder
+from Sampler import RandomSampler, SeqSampler, SeqSamplerV2
 
 def get_dataloader(pathDir,imageDir):
 
@@ -30,16 +30,17 @@ def get_dataloader(pathDir,imageDir):
     
     if imageDir and npy:
         # read in data
-        train_set = GetDataSeqTilesArray("train", pathDir=trainPathDir, transform=trans)
-        val_set = GetDataSeqTilesArray("validation", pathDir=valPathDir, transform=trans)
+        # Emil get Random tiles is used here
+        train_set = GetDataTilesArray("train", pathDir=trainPathDir, transform=trans)
+        val_set = GetDataTilesArray("validation", pathDir=valPathDir, transform=trans)
     elif imageDir:
         # read in data
         train_set = GetDataSeqTilesFolder("train", pathDir=trainPathDir, transform=trans)
         val_set = GetDataSeqTilesFolder("validation", pathDir=valPathDir, transform=trans)
     else:
         # read in data
-        train_set = GetDataRandomTilesArray("train", pathDir=trainPathDir, transform=trans)
-        val_set = GetDataRandomTilesArray("validation", pathDir=valPathDir, transform=trans)
+        train_set = GetDataTilesArray("train", pathDir=trainPathDir, transform=trans)
+        val_set = GetDataTilesArray("validation", pathDir=valPathDir, transform=trans)
     
     image_datasets = {
         'train': train_set, 'val': val_set
@@ -53,8 +54,8 @@ def get_dataloader(pathDir,imageDir):
 
     if imageDir and npy:
         # read in data
-        samplie_train = SeqSampler(train_set, sample_size_train, 1024, 0)
-        samplie_val = SeqSampler(val_set, sample_size_val, 1024, 0)
+        samplie_train = SeqSamplerV2(train_set, sample_size_train, 1024, 0)
+        samplie_val = SeqSamplerV2(val_set, sample_size_val, 1024, 0)
         dataloaders = {
             'train': DataLoader(train_set, batch_size=batch_size, num_workers=0, sampler=samplie_train),
             'val': DataLoader(val_set, batch_size=batch_size, num_workers=0, sampler=samplie_val)

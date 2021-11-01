@@ -12,17 +12,18 @@ import copy
 import numpy as np
 from torch.utils.data.sampler import Sampler
 
-from Dataset import GetDataSeqTilesArray, GetDataRandomTilesArray, GetDataSeqTilesFolder
+from Dataset import GetDataSeqTilesArray, GetDataTilesArray, GetDataSeqTilesFolder
 from loss import calc_loss
 
-def print_metrics(metrics, epoch_samples, phase):
+def print_metrics(metrics, epoch_samples, phase,f):
     outputs = []
     for k in metrics.keys():
         outputs.append("{}: {:4f}".format(k, metrics[k] / epoch_samples))
 
     print("{}: {}".format(phase, ", ".join(outputs)))
+    print("{}: {}".format(phase, ", ".join(outputs)),file=f)
 
-def train_model(model, dataloaders, device, optimizer, scheduler, num_epochs=25):
+def train_model(model, dataloaders, device, optimizer, scheduler, f, num_epochs=25):
     best_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 1e10
     for epoch in range(num_epochs):
@@ -56,7 +57,7 @@ def train_model(model, dataloaders, device, optimizer, scheduler, num_epochs=25)
                         optimizer.step()
                 # statistics
                 epoch_samples += inputs.size(0)
-            print_metrics(metrics, epoch_samples, phase)
+            print_metrics(metrics, epoch_samples, phase,f)
             epoch_loss = metrics['loss'] / epoch_samples
             # deep copy the model
             if phase == 'val' and epoch_loss < best_loss:
