@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 class GetDataTilesArray(Dataset):
 
-    def __init__(self, whichData, pathDir="", transform=None):
+    def __init__(self, whichData, preName, pathDir="", transform=None):
 
         # define the size of the tiles to be working on
         shape = 1024
@@ -23,22 +23,16 @@ class GetDataTilesArray(Dataset):
         mask_list = []        
         image_list = []        
         self.whichData = whichData
+        self.preName = preName
         files.sort()
-        
-        # Emil
         self.counter=0
     
         for file in files:
             if "_mask.npy" in file:
                 continue
-
-            # emil
-            print("file:")
+            print("file being read is:")
             print(file)
-
-
             im = np.load(pathDir + file)
-
             if(self.whichData=="predict"):
                 meanIm, stdIm = np.mean(im), np.std(im)
                 normalize = lambda x: (x - meanIm) / (stdIm + 1e-10)
@@ -69,16 +63,16 @@ class GetDataTilesArray(Dataset):
         assert np.shape(image) == (1024,1024)
         assert np.shape(mask) == (1024,1024)
 
-        # crops from first run
-        if self.counter < 10:
+        if self.counter < 20:
+            # crops from first run
             if self.whichData=="train":
-                plt.imsave("crops/train_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
-                plt.imsave("crops/train_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
-            else:
-                plt.imsave("crops/val_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
-                plt.imsave("crops/val_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
+                plt.imsave("crops"+self.preName+"/train_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
+                plt.imsave("crops"+self.preName+"/train_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
+            elif self.whichData=="validation":
+                plt.imsave("crops"+self.preName+"/val_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
+                plt.imsave("crops"+self.preName+"/val_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
 
-            self.counter+=1
+        self.counter += 1
 
         if self.transform:
             image = self.transform(image)
@@ -89,7 +83,6 @@ class GetDataTilesArray(Dataset):
 class GetDataSeqTilesArray(Dataset):
 
     def __init__(self, whichData, pathDir="", transform=None):
-
         # define the size of the tiles to be working on
         shape = 1024
         assert whichData in ['train', 'validation', 'predict']            
@@ -107,21 +100,15 @@ class GetDataSeqTilesArray(Dataset):
         # I assume half of the files are masks and the other half images
         image_array = np.zeros((len(files)//2))
         mask_array = np.zeros((len(files)//2))
-
-        # Emil
         self.whichData = whichData
         self.counter=0
     
         for file in files:
             if "_mask.npy" in file:
                 continue
-            
-            # emil
-            print("file:")
+            print("file being read is:")
             print(file)
-
             im = np.load(pathDir + file)
-
             if(whichData!="predict"):
                 newFile = file.replace(".npy","_mask.npy")
                 mask = np.load(pathDir + newFile)
@@ -164,13 +151,16 @@ class GetDataSeqTilesArray(Dataset):
         assert np.shape(image) == (1024,1024)
         assert np.shape(mask) == (1024,1024)
 
-        if self.counter < 10:
-            print("HERE:")
-            print("cropsSeq/"+str(i)+"_"+str(j)+".png")
-            plt.imsave("cropsSeq/"+str(i)+"_"+str(j)+".png", image)
-            plt.imsave("cropsSeq/"+str(i)+"_"+str(j)+"_mask.png", mask)
-            self.counter+=1
-            
+        if self.counter < 20:
+            # crops from first run
+            if self.whichData=="train":
+                plt.imsave("crops"+self.preName+"/train_"+str(i)+"_"+str(j)+".png", image)
+                plt.imsave("crops"+self.preName+"/train_"+str(i)+"_"+str(j)+"_mask.png", mask)
+            elif self.whichData=="validation":
+                plt.imsave("crops"+self.preName+"/val_"+str(i)+"_"+str(j)+".png", image)
+                plt.imsave("crops"+self.preName+"/val_"+str(i)+"_"+str(j)+"_mask.png", mask)
+
+        self.counter += 1
 
         if self.transform:
             image = self.transform(image)
@@ -192,8 +182,6 @@ class GetDataSeqTilesFolder(Dataset):
         big_mask_list = []        
         big_image_list = []        
         files.sort()
-
-        # Emil
         self.whichData = whichData
         self.counter=0
 
@@ -208,7 +196,6 @@ class GetDataSeqTilesFolder(Dataset):
                 mask = np.zeros((shape,shape))                      
                 mask_list.append(mask)
                 image_list.append(normalize(im2))
-                
             else:
                 newFile = file.replace(".png","_mask.png")
                 newFile = newFile.replace(".jpg","_mask.png")
@@ -231,7 +218,7 @@ class GetDataSeqTilesFolder(Dataset):
         image = self.input_images[idx]
         mask = self.target_masks[idx]
 
-        if self.counter < 10:
+        if self.counter < 10 and (self.whichData=="train" or self.whichData=="validation"):
             print("HERE:")
             print("cropsFolder/"+str(idx)+".png")
 

@@ -66,11 +66,14 @@ def predict(model, pathDir, imageDir, device):
     for i in range(0,len(pred)):
         newFile = files[i].replace(".png","_mask.png")
         newFile = newFile.replace(".jpg","_mask.png")
-
         newPred = pred[i][0]
-    
+
+        # Emil - which one to use!?
         newPred[newPred > 0.5] = 255
         newPred[newPred <= 0.5] = 0
+        # newPred[newPred > 0.9] = 255
+        # newPred[newPred <= 0.9] = 0
+
         plt.imsave(pathDir+newFile, newPred)
 
     return pred

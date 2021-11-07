@@ -8,7 +8,7 @@ import os
 from Dataset import GetDataSeqTilesArray, GetDataTilesArray, GetDataSeqTilesFolder
 from Sampler import RandomSampler, SeqSampler, SeqSamplerV2
 
-def get_dataloader(pathDir,imageDir):
+def get_dataloader(pathDir,imageDir,preName):
 
     # use the same transformations for train/val in this example
     trans = transforms.Compose([
@@ -31,23 +31,23 @@ def get_dataloader(pathDir,imageDir):
     if imageDir and npy:
         # read in data
         # Emil get Random tiles is used here
-        train_set = GetDataTilesArray("train", pathDir=trainPathDir, transform=trans)
-        val_set = GetDataTilesArray("validation", pathDir=valPathDir, transform=trans)
+        train_set = GetDataTilesArray("train", preName, pathDir=trainPathDir, transform=trans)
+        val_set = GetDataTilesArray("validation", preName, pathDir=valPathDir, transform=trans)
     elif imageDir:
         # read in data
-        train_set = GetDataSeqTilesFolder("train", pathDir=trainPathDir, transform=trans)
-        val_set = GetDataSeqTilesFolder("validation", pathDir=valPathDir, transform=trans)
+        train_set = GetDataSeqTilesFolder("train", preName, pathDir=trainPathDir, transform=trans)
+        val_set = GetDataSeqTilesFolder("validation", preName, pathDir=valPathDir, transform=trans)
     else:
         # read in data
-        train_set = GetDataTilesArray("train", pathDir=trainPathDir, transform=trans)
-        val_set = GetDataTilesArray("validation", pathDir=valPathDir, transform=trans)
+        train_set = GetDataTilesArray("train", preName, pathDir=trainPathDir, transform=trans)
+        val_set = GetDataTilesArray("validation", preName, pathDir=valPathDir, transform=trans)
     
     image_datasets = {
         'train': train_set, 'val': val_set
     }
 
-    sample_size_train = 400
-    sample_size_val = 20
+    sample_size_train = 1559
+    sample_size_val = 73
     batch_size = 2
 
     dataloaders = {}
