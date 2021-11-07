@@ -6,7 +6,7 @@ from torch.utils.data.sampler import Sampler
 import os
 
 from Dataset import GetDataSeqTilesArray, GetDataTilesArray, GetDataSeqTilesFolder
-from Sampler import RandomSampler, SeqSampler, SeqSamplerV2
+from Sampler import RandomSampler, SeqSampler, SeqSamplerV2, SeqSamplerV2uniform
 
 def get_dataloader(pathDir,imageDir,preName):
 
@@ -54,8 +54,8 @@ def get_dataloader(pathDir,imageDir,preName):
 
     if imageDir and npy:
         # read in data
-        samplie_train = SeqSamplerV2(train_set, sample_size_train, 1024, 0)
-        samplie_val = SeqSamplerV2(val_set, sample_size_val, 1024, 0)
+        samplie_train = SeqSamplerV2uniform(train_set, sample_size_train, 1024, 0)
+        samplie_val = SeqSamplerV2uniform(val_set, sample_size_val, 1024, 0)
         dataloaders = {
             'train': DataLoader(train_set, batch_size=batch_size, num_workers=0, sampler=samplie_train),
             'val': DataLoader(val_set, batch_size=batch_size, num_workers=0, sampler=samplie_val)

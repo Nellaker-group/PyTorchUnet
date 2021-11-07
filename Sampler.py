@@ -63,11 +63,11 @@ class RandomSampler(Sampler):
             rand_var = np.random.randint(0,4)
             if rand_var == 0:
                 y0, x0 = np.random.randint(0, rangeH), np.random.randint(0, rangeW)
-            if rand_var == 1:
+            elif rand_var == 1:
                 y0, x0 = np.random.randint(0, rangeH2), np.random.randint(0, rangeW2)
-            if rand_var == 2:
+            elif rand_var == 2:
                 y0, x0 = np.random.randint(0, rangeH3), np.random.randint(0, rangeW3)
-            if rand_var == 3:
+            elif rand_var == 3:
                 y0, x0 = np.random.randint(0, rangeH4), np.random.randint(0, rangeW4)
                 
             listie.append((rand_var,y0,x0))
@@ -123,11 +123,11 @@ class SeqSampler(Sampler):
             i = -1
             if rand_var == 0:
                 i = np.random.randint(0, l)
-            if rand_var == 1:
+            elif rand_var == 1:
                 i = np.random.randint(0, l2)
-            if rand_var == 2:
+            elif rand_var == 2:
                 i = np.random.randint(0, l3)
-            if rand_var == 3:
+            elif rand_var == 3:
                 i = np.random.randint(0, l4)
                 
             listie.append((rand_var,i))
@@ -207,13 +207,13 @@ class SeqSamplerV2(Sampler):
             if rand_var < 4:
                 y0, x0 = random.choice(list(range(0, (rangeH+1), 1024))), random.choice(list(range(0, (rangeW+1), 1024)))
                 index=0
-            if rand_var >= 4 and rand_var < 9:
+            elif rand_var >= 4 and rand_var < 9:
                 y0, x0 = random.choice(list(range(0, (rangeH2+1), 1024))), random.choice(list(range(0, (rangeW2+1), 1024)))
                 index=1
-            if rand_var >= 9 and rand_var < 85:
+            elif rand_var >= 9 and rand_var < 85:
                 y0, x0 = random.choice(list(range(0, (rangeH3+1), 1024))), random.choice(list(range(0, (rangeW3+1), 1024)))
                 index=2
-            if rand_var >= 85:                
+            elif rand_var >= 85:                
                 y0, x0 = random.choice(list(range(0, (rangeH4+1), 1024))), random.choice(list(range(0, (rangeW4+1), 1024)))
                 index=3
                 
@@ -289,13 +289,13 @@ class SeqSamplerV2uniform(Sampler):
             if rand_var == 0:
                 y0, x0 = random.choice(list(range(0, (rangeH+1), 1024))), random.choice(list(range(0, (rangeW+1), 1024)))
                 index=0
-            if rand_var == 1:
+            elif rand_var == 1:
                 y0, x0 = random.choice(list(range(0, (rangeH2+1), 1024))), random.choice(list(range(0, (rangeW2+1), 1024)))
                 index=1
-            if rand_var == 2:
+            elif rand_var == 2:
                 y0, x0 = random.choice(list(range(0, (rangeH3+1), 1024))), random.choice(list(range(0, (rangeW3+1), 1024)))
                 index=2
-            if rand_var == 3                
+            elif rand_var == 3:
                 y0, x0 = random.choice(list(range(0, (rangeH4+1), 1024))), random.choice(list(range(0, (rangeW4+1), 1024)))
                 index=3
                 
