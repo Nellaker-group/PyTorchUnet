@@ -12,7 +12,7 @@ import copy
 import numpy as np
 from torch.utils.data.sampler import Sampler
 
-from Dataset import GetDataSeqTilesArray, GetDataTilesArray, GetDataSeqTilesFolder
+from Dataset import GetDataTilesArray, GetDataSeqTilesFolder
 from loss import calc_loss
 
 def print_metrics(metrics, epoch_samples, phase,f):

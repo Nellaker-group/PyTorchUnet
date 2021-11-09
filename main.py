@@ -99,7 +99,7 @@ def main():
     preName = randOrSeq+"Tiles_epochs"+str(noEpochs)+"time"+date+"gamma"+gamma
 
     if(trainOrPredict == "train"):
-        training_data = get_dataloader(pathDir,imageDir,preName)
+        training_data = get_dataloader(pathDir,imageDir,preName,seed)
         optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
         exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=float(gamma))
 
