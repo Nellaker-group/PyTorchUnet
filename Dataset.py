@@ -37,6 +37,14 @@ class GetDataTilesArray(Dataset):
             mask = np.load(pathDir + newFile)
             image_list.append(im)
             mask_list.append(mask)
+        
+        self.totalMean = sum(self.meanIm) / len(self.meanIm)
+        self.totalStd = sum(self.stdIm) / len(self.stdIm)
+
+        f=open("weights/norm"+preName+".norm","w")
+        print(self.totalMean,file=f)
+        print(self.totalStd,file=f)
+        f.close()
 
         mask_array = np.asarray(mask_list)
         image_array = np.asarray(image_list)
@@ -53,7 +61,7 @@ class GetDataTilesArray(Dataset):
         image = self.input_images[i][x:(x+shape),y:(y+shape)] 
         mask = self.target_masks[i][x:(x+shape),y:(y+shape)] 
 
-        normalize = lambda x: (x - self.meanIm[i]) / (self.stdIm[i] + 1e-10)
+        normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
         image = normalize(image)
 
         assert np.shape(image) == (1024,1024)
@@ -77,7 +85,7 @@ class GetDataTilesArray(Dataset):
 
 # prediction is done on files in a folder
 class GetDataSeqTilesFolder(Dataset):
-    def __init__(self, whichData, pathDir="", transform=None):
+    def __init__(self, whichData, preName, pathDir="", transform=None):
 
         # define the size of the tiles to be working on
         shape = 1024
@@ -92,6 +100,11 @@ class GetDataSeqTilesFolder(Dataset):
         self.whichData = whichData
         self.counter=0
 
+        f=open("weights/norm"+preName+".norm","r")
+        self.totalMean = float(f.readline())
+        self.totalStd = float(f.readline())
+        f.close()
+
         for file in files:
             if "_mask.png" in file:
                 continue
@@ -99,8 +112,7 @@ class GetDataSeqTilesFolder(Dataset):
             print(file)
             im = cv2.imread(pathDir + file, cv2.IMREAD_GRAYSCALE)
             im2 = np.reshape(im,(shape,shape,1))
-            meanIm, stdIm = np.mean(im2), np.std(im2)
-            normalize = lambda x: (x - meanIm) / (stdIm + 1e-10)
+            normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
             mask = np.zeros((shape,shape))                      
             mask_list.append(mask)
             image_list.append(normalize(im2))

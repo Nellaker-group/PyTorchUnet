@@ -22,7 +22,7 @@ from torch.utils.data.sampler import Sampler
 from Dataset import GetDataTilesArray, GetDataSeqTilesFolder
 from Sampler import RandomSampler, SeqSamplerDatasetSize, SeqSamplerUniform
 
-def predict(model, pathDir, imageDir, device):
+def predict(model, pathDir, imageDir, device, preName):
 
     print("DO I PREDICT!?")
 
@@ -35,7 +35,7 @@ def predict(model, pathDir, imageDir, device):
 
     sample_size_pred = len(os.listdir(pathDir))
 
-    pred_set = GetDataSeqTilesFolder("predict", pathDir, transform=trans)
+    pred_set = GetDataSeqTilesFolder("predict", preName, pathDir=pathDir, transform=trans)
     
     batch_size = 2
 

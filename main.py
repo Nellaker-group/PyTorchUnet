@@ -120,7 +120,7 @@ def main():
         # load image
         model.load_state_dict(torch.load(predictWeights))
         model.eval()
-        results = predict(model,pathDir,imageDir,device)
+        results = predict(model,pathDir,imageDir,device,preName)
 
 if __name__ == "__main__":
     main()
