@@ -6,10 +6,10 @@ from torch.utils.data.sampler import Sampler
 import os
 
 from Dataset import GetDataTilesArray, GetDataSeqTilesFolder
-from Sampler import RandomSampler, SeqSamplerDatasetSize, SeqSamplerUniform
+from Sampler import RandomSampler, SeqSamplerDatasetSize, SeqSamplerUniform, ValSampler
 
 
-def get_dataloader(pathDir,imageDir,preName,seed):
+def get_dataloader(pathDir,imageDir,preName):
 
     # use the same transformations for train/val in this example
     trans = transforms.Compose([
@@ -30,9 +30,9 @@ def get_dataloader(pathDir,imageDir,preName,seed):
     image_datasets = {
         'train': train_set, 'val': val_set
     }
-
-    sample_size_train = 400
-    sample_size_val = 73
+    
+    sample_size_train = 4
+    # it uses all val tiles
     batch_size = 2
 
     dataloaders = {}
@@ -40,7 +40,7 @@ def get_dataloader(pathDir,imageDir,preName,seed):
     if imageDir:
         # read in data
         samplie_train = SeqSamplerDatasetSize(train_set, sample_size_train, 1024, 0)
-        samplie_val = SeqSamplerDatasetSize(val_set, sample_size_val, 1024, 0, seed=seed)
+        samplie_val = ValSampler(val_set,  1024, 0)
         dataloaders = {
             'train': DataLoader(train_set, batch_size=batch_size, num_workers=0, sampler=samplie_train),
             'val': DataLoader(val_set, batch_size=batch_size, num_workers=0, sampler=samplie_val)
@@ -48,7 +48,7 @@ def get_dataloader(pathDir,imageDir,preName,seed):
     else:
         # read in data
         samplie_train = RandomSampler(train_set, sample_size_train, 1024, 0)
-        samplie_val = RandomSampler(val_set, sample_size_val, 1024, 0, seed=seed)
+        samplie_val = ValSampler(val_set, 1024, 0)
         dataloaders = {
             'train': DataLoader(train_set, batch_size=batch_size, num_workers=0, sampler=samplie_train),
             'val': DataLoader(val_set, batch_size=batch_size, num_workers=0, sampler=samplie_val)

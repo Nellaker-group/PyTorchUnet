@@ -11,9 +11,13 @@ import time
 import copy
 import numpy as np
 from torch.utils.data.sampler import Sampler
+import matplotlib.pyplot as plt
 
 from Dataset import GetDataTilesArray, GetDataSeqTilesFolder
 from loss import calc_loss
+
+
+
 
 def print_metrics(metrics, epoch_samples, phase,f):
     outputs = []
@@ -23,15 +27,31 @@ def print_metrics(metrics, epoch_samples, phase,f):
     print("{}: {}".format(phase, ", ".join(outputs)))
     print("{}: {}".format(phase, ", ".join(outputs)),file=f)
 
-def train_model(model, dataloaders, device, optimizer, scheduler, f, num_epochs=25):
+# dumps first tile from training with its predicted mask and ground truth mask
+def dump_predictions(labels,outputs,epoch,preName,phase,shape=1024):
+    labTmp=labels[0].detach().cpu().numpy()
+    outTmp=torch.sigmoid(outputs)
+    outTmp=outTmp[0].detach().cpu().numpy()
+    outTmp[outTmp > 0.5] = 255
+    outTmp[outTmp <= 0.5] = 0
+    if phase == 'train':
+        plt.imsave("crops"+preName+"/trainLabels_epoch"+str(epoch)+".png",  labTmp[0,0:shape,0:shape])
+        plt.imsave("crops"+preName+"/trainPredicted_epoch"+str(epoch)+".png", outTmp[0,0:shape,0:shape])
+    else:
+        plt.imsave("crops"+preName+"/valLabels_epoch"+str(epoch)+".png",  labTmp[0,0:shape,0:shape])
+        plt.imsave("crops"+preName+"/valPredicted_epoch"+str(epoch)+".png", outTmp[0,0:shape,0:shape])
+        
+def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, num_epochs=25):
     best_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 1e10
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
         since = time.time()
+        writePred = 0
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
+            writePred=0
             if phase == 'train':
                 scheduler.step()
                 for param_group in optimizer.param_groups:
@@ -57,6 +77,10 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, num_epochs=
                         optimizer.step()
                 # statistics
                 epoch_samples += inputs.size(0)
+                # writing training predictions
+                if(writePred==0):
+                    dump_predictions(labels,outputs,epoch,preName,phase)
+                    writePred=1                                    
             print_metrics(metrics, epoch_samples, phase,f)
             epoch_loss = metrics['loss'] / epoch_samples
             # deep copy the model

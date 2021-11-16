@@ -23,7 +23,7 @@ class GetDataTilesArray(Dataset):
         files.sort()
         self.meanIm=[]
         self.stdIm=[]
-        self.counter=0
+        self.epochs=0
         
         for file in files:
             if "_mask.npy" in file:
@@ -56,7 +56,7 @@ class GetDataTilesArray(Dataset):
         return len(self.input_images)
 
     def __getitem__(self, idx):
-        i,x,y = idx
+        i,x,y,first = idx
         shape = 1024
         image = self.input_images[i][x:(x+shape),y:(y+shape)] 
         mask = self.target_masks[i][x:(x+shape),y:(y+shape)] 
@@ -67,16 +67,15 @@ class GetDataTilesArray(Dataset):
         assert np.shape(image) == (1024,1024)
         assert np.shape(mask) == (1024,1024)
 
-        if self.counter < 20:
+        if first == 1:
             # crops from first run
             if self.whichData=="train":
-                plt.imsave("crops"+self.preName+"/train_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
-                plt.imsave("crops"+self.preName+"/train_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
+                plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
+                plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
             elif self.whichData=="validation":
-                plt.imsave("crops"+self.preName+"/val_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
-                plt.imsave("crops"+self.preName+"/val_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
-
-        self.counter += 1
+                plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
+                plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
+            self.epochs += 1
 
         if self.transform:
             image = self.transform(image)
