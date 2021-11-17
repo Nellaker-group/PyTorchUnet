@@ -8,6 +8,7 @@ import sys
 import math
 import matplotlib
 import matplotlib.pyplot as plt
+from augment import augmenter
 
 # training is done with a montage
 class GetDataTilesArray(Dataset):
@@ -63,6 +64,8 @@ class GetDataTilesArray(Dataset):
 
         normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
         image = normalize(image)
+        # augment image 50 % of the time - either rotates or flips 
+        image,mask = augmenter(image,mask)
 
         assert np.shape(image) == (1024,1024)
         assert np.shape(mask) == (1024,1024)
@@ -80,6 +83,7 @@ class GetDataTilesArray(Dataset):
         if self.transform:
             image = self.transform(image)
             mask = self.transform(mask)
+
         return [image, mask]
 
 # prediction is done on files in a folder

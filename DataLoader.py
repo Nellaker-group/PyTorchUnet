@@ -23,7 +23,6 @@ def get_dataloader(pathDir,imageDir,preName):
     print(imageDir)
     
     # read in data
-    # Emil get Random tiles is used here
     train_set = GetDataTilesArray("train", preName, pathDir=trainPathDir, transform=trans)
     val_set = GetDataTilesArray("validation", preName, pathDir=valPathDir, transform=trans)
 
@@ -31,7 +30,7 @@ def get_dataloader(pathDir,imageDir,preName):
         'train': train_set, 'val': val_set
     }
     
-    sample_size_train = 4
+    sample_size_train = 400
     # it uses all val tiles
     batch_size = 2
 
