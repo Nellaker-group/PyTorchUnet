@@ -30,9 +30,9 @@ def get_dataloader(pathDir,imageDir,preName):
         'train': train_set, 'val': val_set
     }
     
-    sample_size_train = 400
+    sample_size_train = 2
     # it uses all val tiles
-    batch_size = 2
+    batch_size = 200
 
     dataloaders = {}
 

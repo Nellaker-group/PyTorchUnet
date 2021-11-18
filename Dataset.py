@@ -64,8 +64,10 @@ class GetDataTilesArray(Dataset):
 
         normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
         image = normalize(image)
-        # augment image 50 % of the time - either rotates or flips 
-        image,mask = augmenter(image,mask)
+
+        # only augments training images - does 50 % of the time - rotates, flips, blur or noise
+        if self.whichData=="train":
+            image,mask = augmenter(image,mask)
 
         assert np.shape(image) == (1024,1024)
         assert np.shape(mask) == (1024,1024)
