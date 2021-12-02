@@ -11,6 +11,7 @@ import os
 from torch.utils.data.sampler import Sampler
 import numpy as np
 from datetime import datetime
+import argparse
 
 import loss
 import Sampler
@@ -55,19 +56,45 @@ def main():
         print("7. gamma (for decaying learning rate - only for training) , 8. path of weights (only for predicting)")
         sys.exit("")
 
-    gpu=sys.argv[1]
-    trainOrPredict=sys.argv[2]
-    seed=int(sys.argv[3])
-    np.random.seed(seed)
 
-    pathDir=sys.argv[4]
-    imageDir=int(sys.argv[5])
+
+    prs = argparse.ArgumentParser()
+    prs.add_argument('--gpu', help='which GPU to run on', type=str)
+    prs.add_argument('--mode', help='train or predict', type=str)
+    prs.add_argument('--tiles', help='how many tiles to use for training', type=int, default=200)
+    prs.add_argument('--seed', help='seed to use', type=int)
+    prs.add_argument('--pathDir', help='path of directory for data', type=str)
+    prs.add_argument('--imageDir', help='if directory with images', type=int)
+    prs.add_argument('--epochs', help='number of epochs', type=int)
+    prs.add_argument('--gamma', help='number of epochs', type=float, default=0)
+    prs.add_argument('--weights', help='path to weights', type=str)
+    prs.add_argument('--augment', help='whether to augment training', type=int, default=0)
+    prs.add_argument('--optimiser', help='which optimiser to use', type=int, default=0)
+
+    args = vars(prs.parse_args())
+    assert args['mode'] in ['train', 'predict']
+    assert args['optimiser'] in [0,1]
+    assert args['augment'] in [0,1]
+    assert (args['optimiser'] in [1] and args['gamma']>0) or (args['optimiser'] in [0] and args['gamma']==0)
+
+    assert args['gpu'] in ['0','1','2','3']
+    gpu=args['gpu']
+
+    trainOrPredict=args['mode']
+    seed=args['seed']
+    np.random.seed(seed)
+    noTiles=args['tiles']
+
+    pathDir=args['pathDir']
+    imageDir=args['imageDir']
     assert imageDir == 0 or imageDir==1
     imageDir=bool(imageDir)
 
-    noEpochs=int(sys.argv[6])
+    noEpochs=args['epochs']
 
-    gamma=sys.argv[7]
+    gamma=args['gamma']
+    ifAugment=args['augment']
+    whichOptim=args['optimiser']
 
 
     print("IT IS ASSUMED THAT THIS SCRIPT IS EXECUTED FROM THE DIRECTORY OF THE FILE")
@@ -88,7 +115,7 @@ def main():
     print("N parameters:")
     print(count_parameters(model))
 
-    date = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+    date = datetime.now().strftime("%Y_%m_%d-%H%M%S")
     
     randOrSeq = ""
     if imageDir:
@@ -96,17 +123,27 @@ def main():
     else:
         randOrSeq = "Random"
 
-    preName = randOrSeq+"Tiles_epochs"+str(noEpochs)+"time"+date+"gamma"+gamma
+    preName = randOrSeq+"Tiles_epochs"+str(noEpochs)+"time"+date+"gamma"+str(gamma)+"seed"+str(seed)+"aug"+str(ifAugment)+"optim"+str(whichOptim)
 
     if(trainOrPredict == "train"):
-        training_data = get_dataloader(pathDir,imageDir,preName)
-        optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
-        exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=float(gamma))
+        training_data = get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles)
+
+        if whichOptim==0:
+
+            optimizer_ft = optim.RMSprop(filter(lambda p: p.requires_grad, model.parameters()), lr=0.0001)
+            # same scheduler as craig is using 
+            lr_scheduler1 = lr_scheduler.CyclicLR(optimizer_ft, base_lr=0.00001, max_lr=0.0005, mode='triangular')
+
+        else:
+            # original scheduler, gives better performances apparently!?            
+            optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.0001)
+            lr_scheduler1 = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=float(gamma))
+
 
         os.mkdir('crops'+preName+'/') 
 
         f=open("log"+preName+".log","w")
-        model = train_model(model, training_data, device, optimizer_ft, exp_lr_scheduler, f, preName, num_epochs=noEpochs)
+        model = train_model(model, training_data, device, optimizer_ft, lr_scheduler1, f, preName, num_epochs=noEpochs)
         if os.path.isdir('weights/'): 
             torch.save(model.state_dict(),"weights/weights"+preName+".dat")
         else:

@@ -42,32 +42,32 @@ def augmenterTmp(image):
 
     choice=np.random.randint(0,9)
 
-    if choice == 0:
+    if choice == 3:
         # flips array left right (vertically)
         image=np.fliplr(image)
         return(image)
-    elif choice == 1:
+    elif choice == 4:
         # flips array up down (horizontically)
         image=np.flipud(image)
         return(image)
-    elif choice == 2:
+    elif choice == 5:
         # moving each element one place clockwise
         image=np.rot90(image, k=1, axes=(1,0))
         return(image)
-    elif choice == 3:
+    elif choice == 6:
         # moving each element one place counter clockwise
         image=np.rot90(image, k=1, axes=(0,1))
         return(image)
-    elif choice == 4:
+    elif choice == 7:
         # gaussian noise
         noise = np.random.normal(0,1,(1024,1024))
         return(image+noise)
         # ...
-    elif choice == 5:
+    elif choice == 8:
         # manual blurring using numpy
         return(blur(image))
         # ...
-    elif choice == 6:
+    elif choice == 9:
         # scipy gaussian blurring
         return(gaussian_filter(image, sigma=1))
         # ...
@@ -80,26 +80,26 @@ def augmenterTmp(image):
 def augmenter(image,mask):
     # half of the time it augments
     choice=np.random.randint(0,10)
-    if choice == 0:
+    if choice == 5:
         # flips array left right (vertically)
-        return(np.fliplr(image).copy(),np.fliplr(mask).copy())
-    elif choice == 1:
+        return(np.fliplr(image).copy(),np.fliplr(mask).copy(),choice)
+    elif choice == 6:
         # flips array up down (horizontically)
-        return(np.flipud(image).copy(),np.flipud(mask).copy())
-    elif choice == 2:
+        return(np.flipud(image).copy(),np.flipud(mask).copy(),choice)
+    elif choice == 7:
         # moving each element one place clockwise
-        return(np.rot90(image, k=1, axes=(1,0)).copy(),np.rot90(mask, k=1, axes=(1,0)).copy())
-    elif choice == 3:
+        return(np.rot90(image, k=1, axes=(1,0)).copy(),np.rot90(mask, k=1, axes=(1,0)).copy(),choice)
+    elif choice == 8:
         # moving each element one place counter clockwise
-        return(np.rot90(image, k=1, axes=(0,1)).copy(),np.rot90(mask, k=1, axes=(0,1)).copy())
-    elif choice == 4:
+        return(np.rot90(image, k=1, axes=(0,1)).copy(),np.rot90(mask, k=1, axes=(0,1)).copy(),choice)
+    elif choice == 9:
         # add random noise
         noise = np.random.normal(0,1,(1024,1024))
-        return(image+noise,mask)
-    elif choice == 5:
+        return(image+noise,mask,choice)
+    elif choice == 10:
         # do gausian blur with a 2D gaussian with SD = 1
-        return(gaussian_filter(image, sigma=1),mask)
+        return(gaussian_filter(image, sigma=1),mask,choice)
     else:
-        return(image,mask)
+        return(image,mask,choice)
     
 

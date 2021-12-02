@@ -12,7 +12,7 @@ from augment import augmenter
 
 # training is done with a montage
 class GetDataTilesArray(Dataset):
-    def __init__(self, whichData, preName, pathDir="", transform=None):
+    def __init__(self, whichData, preName, pathDir="", transform=None, ifAugment=0):
         # define the size of the tiles to be working on
         shape = 1024
         assert whichData in ['train', 'validation']            
@@ -25,6 +25,7 @@ class GetDataTilesArray(Dataset):
         self.meanIm=[]
         self.stdIm=[]
         self.epochs=0
+        self.ifAugment=ifAugment
         
         for file in files:
             if "_mask.npy" in file:
@@ -61,16 +62,7 @@ class GetDataTilesArray(Dataset):
         shape = 1024
         image = self.input_images[i][x:(x+shape),y:(y+shape)] 
         mask = self.target_masks[i][x:(x+shape),y:(y+shape)] 
-
-        normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
-        image = normalize(image)
-
-        # only augments training images - does 50 % of the time - rotates, flips, blur or noise
-        if self.whichData=="train":
-            image,mask = augmenter(image,mask)
-
-        assert np.shape(image) == (1024,1024)
-        assert np.shape(mask) == (1024,1024)
+        choice=0
 
         if first == 1:
             # crops from first run
@@ -81,6 +73,25 @@ class GetDataTilesArray(Dataset):
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
             self.epochs += 1
+
+        # only augments training images - does 50 % of the time - rotates, flips, blur or noise
+        if self.whichData=="train" and self.ifAugment:
+            image,mask,choice = augmenter(image,mask)
+
+        assert np.shape(image) == (1024,1024)
+        assert np.shape(mask) == (1024,1024)
+
+        if choice > 0 and first == 1:
+            # crops from first run
+            if self.whichData=="train":
+                plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_choice"+str(choice)+".png", image)
+                plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_choice"+str(choice)+"_mask.png", mask)
+            elif self.whichData=="validation":
+                plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_choice"+str(choice)+".png", image)
+                plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_choice"+str(choice)+"_mask.png", mask)
+
+        normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
+        image = normalize(image)
 
         if self.transform:
             image = self.transform(image)
