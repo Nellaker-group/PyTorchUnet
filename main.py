@@ -22,7 +22,7 @@ import DataLoader
 import model
 
 
-from model import UNet
+from model import UNet, UNetnoDial
 from model import count_parameters
 from DataLoader import get_dataloader
 from training import train_model
@@ -70,11 +70,14 @@ def main():
     prs.add_argument('--weights', help='path to weights', type=str)
     prs.add_argument('--augment', help='whether to augment training', type=int, default=0)
     prs.add_argument('--optimiser', help='which optimiser to use', type=int, default=0)
+    prs.add_argument('--dilate', help='to use UNet with dilations or not', type=int, default=1)
+
 
     args = vars(prs.parse_args())
     assert args['mode'] in ['train', 'predict']
     assert args['optimiser'] in [0,1]
     assert args['augment'] in [0,1]
+    assert args['dilate'] in [0,1]
     assert (args['optimiser'] in [1] and args['gamma']>0) or (args['optimiser'] in [0] and args['gamma']==0)
 
     assert args['gpu'] in ['0','1','2','3']
@@ -107,8 +110,13 @@ def main():
     print(device)
         
     num_class = 1
-    model = UNet(n_class=num_class).to(device)
-        
+
+    model = None
+    if args['dilate'] == 1:
+        model = UNet(n_class=num_class).to(device)
+    else:
+        model = UNetnoDial(n_class=num_class).to(device)
+
     #model.double()
     print(model)
     

@@ -14,7 +14,7 @@ from torch.utils.data.sampler import Sampler
 import matplotlib.pyplot as plt
 
 from Dataset import GetDataTilesArray, GetDataSeqTilesFolder
-from loss import calc_loss
+from loss import calc_loss, calc_lossCraig
 
 
 
@@ -70,7 +70,7 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, nu
                 # track history if only in train
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
-                    loss = calc_loss(outputs, labels, metrics)
+                    loss = calc_lossCraig(outputs, labels, metrics)
                     # backward + optimize only if in training phase
                     if phase == 'train':
                         loss.backward()
