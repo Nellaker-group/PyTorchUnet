@@ -53,7 +53,9 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, nu
         for phase in ['train', 'val']:
             writePred=0
             if phase == 'train':
-                scheduler.step()
+                # emil moved scheduler step to after optimiszer step according to pytorch documentation
+                # https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+                # scheduler.step()
                 for param_group in optimizer.param_groups:
                     print("LR", param_group['lr'])
                 model.train()  # Set model to training mode
@@ -75,12 +77,14 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, nu
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
+
                 # statistics
                 epoch_samples += inputs.size(0)
                 # writing training predictions
                 if(writePred==0):
                     dump_predictions(labels,outputs,epoch,preName,phase)
                     writePred=1                                    
+            
             print_metrics(metrics, epoch_samples, phase,f)
             epoch_loss = metrics['loss'] / epoch_samples
             # deep copy the model
@@ -88,6 +92,8 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, nu
                 print("saving best model")
                 best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(model.state_dict())
+        # emil moved this to here in accordance with HAPPY pipeline
+        scheduler.step()
         time_elapsed = time.time() - since
         print('{:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
     print('Best val loss: {:4f}'.format(best_loss))

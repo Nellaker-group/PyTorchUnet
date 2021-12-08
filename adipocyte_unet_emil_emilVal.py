@@ -18,7 +18,7 @@ import pickle
 import tifffile as tiff
 import os
 import sys
-sys.path.append('.')
+sys.path.append('/well/lindgren/users/swf744/adipocyte/segmentation/')
 from src.utils.runtime import funcname, gpu_selection
 from src.utils.model import (dice_coef, dice_coef_loss, KerasHistoryPlotCallback, 
                              KerasSimpleLoggerCallback, jaccard_coef, jaccard_coef_int, 
@@ -42,7 +42,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import math
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+sys.path.append('.')
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 def bce_dice_loss(y_true, y_pred):
     return binary_crossentropy(y_true, y_pred) + dice_loss(y_true, y_pred)
@@ -217,25 +219,22 @@ class UNet():
         down3 = Conv2D(init_nb*4,3, activation='relu', padding='same')(down3)
         down3pool = MaxPooling2D((2, 2), strides=(2, 2))(down3)
 
-        # emil removing dilations 03-12-2021
         # stacked dilated convolution
-        # dilate1 = Conv2D(init_nb*8,3, activation='relu', padding='same', dilation_rate=1)(down3pool)
-        # dilate2 = Conv2D(init_nb*8,3, activation='relu', padding='same', dilation_rate=2)(dilate1)
-        # dilate3 = Conv2D(init_nb*8,3, activation='relu', padding='same', dilation_rate=4)(dilate2)
-        # dilate4 = Conv2D(init_nb*8,3, activation='relu', padding='same', dilation_rate=8)(dilate3)
-        # dilate5 = Conv2D(init_nb*8,3, activation='relu', padding='same', dilation_rate=16)(dilate4)
-        # dilate6 = Conv2D(init_nb*8,3, activation='relu', padding='same', dilation_rate=32)(dilate5)
-        # dilate_all_added = add([dilate1, dilate2, dilate3, dilate4, dilate5, dilate6])
-    
-        # up3 = UpSampling2D((2, 2))(dilate_all_added)
-        up3 = UpSampling2D((2, 2))(down3pool)
+        dilate1 = Conv2D(init_nb*8,3, activation='relu', padding='same', dilation_rate=1)(down3pool)
+        dilate2 = Conv2D(init_nb*8,3, activation='relu', padding='same', dilation_rate=2)(dilate1)
+        dilate3 = Conv2D(init_nb*8,3, activation='relu', padding='same', dilation_rate=4)(dilate2)
+        dilate4 = Conv2D(init_nb*8,3, activation='relu', padding='same', dilation_rate=8)(dilate3)
+        dilate5 = Conv2D(init_nb*8,3, activation='relu', padding='same', dilation_rate=16)(dilate4)
+        dilate6 = Conv2D(init_nb*8,3, activation='relu', padding='same', dilation_rate=32)(dilate5)
+
+        dilate_all_added = add([dilate1, dilate2, dilate3, dilate4, dilate5, dilate6])        
+        up3 = UpSampling2D((2, 2))(dilate_all_added)
         up3 = Conv2D(init_nb*4,3, activation='relu', padding='same')(up3)
         up3 = concatenate([down3, up3])
         up3 = Conv2D(init_nb*4,3, activation='relu', padding='same')(up3)
         up3 = Conv2D(init_nb*4,3, activation='relu', padding='same')(up3)
 
         up2 = UpSampling2D((2, 2))(up3)
-        up2 = UpSampling2D((2, 2))(down3pool)
         up2 = Conv2D(init_nb*2,3, activation='relu', padding='same')(up2)
         up2 = concatenate([down2, up2])
         up2 = Conv2D(init_nb*2,3, activation='relu', padding='same')(up2)
@@ -302,6 +301,9 @@ class UNet():
         print("self.checkpoint_path:")
         print(self.checkpoint_path)
         logger.info('Training for %d epochs.' % self.config['nb_epoch'])
+
+        # emil - for getting sames tiles as in PyTorch
+        np.random.seed(865)
         self.net.fit_generator(generator=gen_trn, steps_per_epoch=(self.train_size/self.config['batch_size']), epochs=self.config['nb_epoch'],
                                validation_data=gen_val, validation_steps=self.val_size, verbose=1, callbacks=cb)
                                # validation_data=gen_val, validation_steps=36, verbose=1, callbacks=cb)
@@ -310,8 +312,8 @@ class UNet():
 
     def batch_gen_trn(self, imgs, imgs2, imgs3, 
                       imgs4, msks, msks2, msks3, 
-                      msks4, batch_size, transform=True, 
-                      rng=np.random,val=False):
+                      msks4, batch_size, transform=True,
+                      val=False):
 
         H, W = imgs.shape
         H2, W2 = imgs2.shape
@@ -327,30 +329,41 @@ class UNet():
 
             for batch_idx in range(batch_size):
                 
-                rand_var = random.random()
-                if rand_var < 0.25:
-                    y0, x0 = rng.randint(0, H - wdw_H), rng.randint(0, W - wdw_W)
+                rand_var = np.random.randint(0,4)
+                y0, x0 = (0,0)
+                # emil changed
+                # rand_var = random.random()
+                #if rand_var < 0.25:
+                if rand_var == 2:
+                    #y0, x0 = np.random.randint(0, H - wdw_H), np.random.randint(0, W - wdw_W)
+                    y0, x0 = np.random.randint(0, max(1,H - wdw_H)), np.random.randint(0, max(1,W - wdw_W))
                     y1, x1 = y0 + wdw_H, x0 + wdw_W
                     img_batch[batch_idx] = imgs[y0:y1, x0:x1]
                     msk_batch[batch_idx] = msks[y0:y1, x0:x1]
-                if rand_var >= 0.25 and rand_var < 0.50:
+                if rand_var == 3:
+                #if rand_var >= 0.25 and rand_var < 0.50:
                     if val ==True:
-                        y0, x0 =  rng.randint(0, H2 - wdw_H), 0
+                        y0, x0 =  np.random.randint(0, H2 - wdw_H), 0
                     else:
-                        y0, x0 = rng.randint(0, H2 - wdw_H), rng.randint(0, W2 - wdw_W)
+                        #y0, x0 = np.random.randint(0, H2 - wdw_H), np.random.randint(0, W2 - wdw_W)
+                        y0, x0 = np.random.randint(0, max(1,H2 - wdw_H)), np.random.randint(0, max(1,W2 - wdw_W))
                     y1, x1 = y0 + wdw_H, x0 + wdw_W
                     img_batch[batch_idx] = imgs2[y0:y1, x0:x1]
                     msk_batch[batch_idx] = msks2[y0:y1, x0:x1]
-                if rand_var >= 0.50 and rand_var <= 0.75:
+                #if rand_var >= 0.50 and rand_var <= 0.75:
+                if rand_var == 0:
                     if val == True:
-                        y0, x0 = rng.randint(0, H3 - wdw_H), rng.randint(0, W3 - wdw_W)
+                        y0, x0 = np.random.randint(0, H3 - wdw_H), np.random.randint(0, W3 - wdw_W)
                     else:
-                        y0, x0 = rng.randint(0, H3 - wdw_H), rng.randint(0, W3 - wdw_W)
+                        #y0, x0 = np.random.randint(0, H3 - wdw_H), np.random.randint(0, W3 - wdw_W)
+                        y0, x0 = np.random.randint(0, max(1,H3 - wdw_H)), np.random.randint(0, max(1,W3 - wdw_W))
                     y1, x1 = y0 + wdw_H, x0 + wdw_W
                     img_batch[batch_idx] = imgs3[y0:y1, x0:x1]
                     msk_batch[batch_idx] = msks3[y0:y1, x0:x1]
-                if rand_var > 0.75:
-                    y0, x0 = rng.randint(0, H4 - wdw_H), rng.randint(0, W4 - wdw_W)
+                #if rand_var > 0.75:
+                if rand_var == 1:
+                    #y0, x0 = np.random.randint(0, H4 - wdw_H), np.random.randint(0, W4 - wdw_W)
+                    y0, x0 = np.random.randint(0, max(1,H4 - wdw_H)), np.random.randint(0, max(1,W4 - wdw_W))
                     y1, x1 = y0 + wdw_H, x0 + wdw_W
                     img_batch[batch_idx] = imgs4[y0:y1, x0:x1]
                     msk_batch[batch_idx] = msks4[y0:y1, x0:x1]
@@ -358,10 +371,12 @@ class UNet():
                 self.train_index += 1
                 # because 0 indexed and
                 if self.train_index == 1 and self.current_epoch_train > -1:
-                    plt.imsave("valTrainDumps/train_"+str(self.train_index)+"_epochs"+str(self.current_epoch_train)+".png", img_batch[batch_idx])
+                    plt.imsave("valTrainDumpsV2/train_"+str(self.train_index)+"_epochs"+str(self.current_epoch_train)+"_randVar"+str(rand_var)+"_x"+str(x0)+"_y"+str(y0)+".png", img_batch[batch_idx])
                 if self.train_index == 10 and self.current_epoch_train == -1:
                     self.train_index = 0
                     self.current_epoch_train += 1
+                    # emil set seed so we get the same sampled values as pytorch
+                    np.random.seed(865)
                 elif self.train_index == self.train_size:
                     self.train_index = 0
                     self.current_epoch_train += 1
@@ -423,7 +438,7 @@ class UNet():
                 self.val_index += 1
                 # because 0 indexed and
                 
-                plt.imsave("valTrainDumps/val_"+str(self.val_index)+"_epochs"+str(self.current_epoch_val)+".png", img_batch[batch_idx])
+                plt.imsave("valTrainDumpsV2/val_"+str(self.val_index)+"_epochs"+str(self.current_epoch_val)+".png", img_batch[batch_idx])
                 if self.val_index == 10 and self.current_epoch_val == -1:
                     self.val_index = 0
                     self.current_epoch_val += 1

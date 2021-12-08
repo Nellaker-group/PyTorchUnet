@@ -80,6 +80,7 @@ class UNet(nn.Module):
         x4 = self.dilate4(x3)
         x5 = self.dilate5(x4)
         x6 = self.dilate6(x5)
+        # tried add_ does not work, also tried torch.add
         x = x1.add(x2).add(x3).add(x4).add(x5).add(x6)
         x = self.upsample(x)        
         x = self.sconv_up3(x)

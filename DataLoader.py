@@ -21,7 +21,7 @@ def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles):
 
     print("imageDir:")
     print(imageDir)
-    
+
     # read in data
     train_set = GetDataTilesArray("train", preName, pathDir=trainPathDir, transform=trans, ifAugment=ifAugment)
     val_set = GetDataTilesArray("validation", preName, pathDir=valPathDir, transform=trans)

@@ -146,8 +146,7 @@ def main():
             # original scheduler, gives better performances apparently!?            
             optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.0001)
             lr_scheduler1 = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=float(gamma))
-
-
+            
         os.mkdir('crops'+preName+'/') 
 
         f=open("log"+preName+".log","w")

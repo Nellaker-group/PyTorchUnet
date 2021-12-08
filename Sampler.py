@@ -54,6 +54,8 @@ class RandomSampler(Sampler):
             x0, y0 = (0,0)
 
             rand_var = np.random.randint(0,4)
+
+
             if rand_var == 0:
                 x0, y0 = np.random.randint(0, rangeH), np.random.randint(0, rangeW)
             elif rand_var == 1:
@@ -65,7 +67,7 @@ class RandomSampler(Sampler):
                 
             listie.append((rand_var,x0,y0,first))
             first = 0
-                        
+
             self.counter += 1
 
         return(iter(listie))
@@ -311,8 +313,6 @@ class ValSampler(Sampler):
         assert tiles3 == count3
         assert tiles4 == count4
         
-        
-
         return(iter(listie))
 
     def __len__(self):
