@@ -144,6 +144,10 @@ class UNet():
         self.meanest = sum([_mean,_mean2,_mean3,_mean4]) / 4
         self.stdest = sum([_std,_std2,_std3,_std4]) / 4
 
+        print("mean and std:")
+        print(self.meanest)
+        print(self.stdest)
+
         # all this for generating indexes for when sampling the val - so that the val is always the same each epoch
         H, W = self.imgs_val.shape
         H2, W2 = self.imgs_val2.shape

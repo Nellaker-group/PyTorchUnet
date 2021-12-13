@@ -39,14 +39,21 @@ class GetDataTilesArray(Dataset):
             mask = np.load(pathDir + newFile)
             image_list.append(im)
             mask_list.append(mask)
-        
-        self.totalMean = sum(self.meanIm) / len(self.meanIm)
-        self.totalStd = sum(self.stdIm) / len(self.stdIm)
 
-        f=open("weights/norm"+preName+".norm","w")
-        print(self.totalMean,file=f)
-        print(self.totalStd,file=f)
-        f.close()
+        # should normalise with training data
+        if self.whichData == "train":
+            self.totalMean = sum(self.meanIm) / len(self.meanIm)
+            self.totalStd = sum(self.stdIm) / len(self.stdIm)
+            f=open("weights/norm"+preName+".norm","w")
+            print(self.totalMean,file=f)
+            print(self.totalStd,file=f)
+            f.close()
+        # with val data it should read data from training data
+        else:
+            f=open("weights/norm"+preName+".norm","r")
+            self.totalMean = float(f.readline())
+            self.totalStd = float(f.readline())
+            f.close()
 
         mask_array = np.asarray(mask_list)
         image_array = np.asarray(image_list)
