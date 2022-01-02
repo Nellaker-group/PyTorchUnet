@@ -69,8 +69,9 @@ def main():
     prs.add_argument('--gamma', help='number of epochs', type=float, default=0)
     prs.add_argument('--weights', help='path to weights', type=str)
     prs.add_argument('--augment', help='whether to augment training', type=int, default=0)
-    prs.add_argument('--optimiser', help='which optimiser to use', type=int, default=0)
+    prs.add_argument('--optimiser', help='which optimiser to use, (cyclicLR=0, stepLR=1)', type=int, default=0)
     prs.add_argument('--dilate', help='to use UNet with dilations or not', type=int, default=1)
+    prs.add_argument('--stepSize', help='which step size to use for stepLR optimiser (--optimiser 1)', type=int, default=0)
 
 
     args = vars(prs.parse_args())
@@ -79,6 +80,7 @@ def main():
     assert args['augment'] in [0,1]
     assert args['dilate'] in [0,1]
     assert (args['optimiser'] in [1] and args['gamma']>0) or (args['optimiser'] in [0] and args['gamma']==0)
+    assert (args['optimiser'] in [1] and args['stepSize']>0) or (args['optimiser'] in [0] and args['stepSize']==0)
 
     assert args['gpu'] in ['0','1','2','3']
     gpu=args['gpu']
@@ -94,7 +96,7 @@ def main():
     imageDir=bool(imageDir)
 
     noEpochs=args['epochs']
-
+    stepSize=args['stepSize']
     gamma=args['gamma']
     ifAugment=args['augment']
     whichOptim=args['optimiser']
@@ -131,7 +133,7 @@ def main():
     else:
         randOrSeq = "Random"
 
-    preName = randOrSeq+"Tiles_epochs"+str(noEpochs)+"time"+date+"gamma"+str(gamma)+"seed"+str(seed)+"aug"+str(ifAugment)+"optim"+str(whichOptim)
+    preName = randOrSeq+"Tiles_epochs"+str(noEpochs)+"time"+date+"gamma"+str(gamma)+"seed"+str(seed)+"aug"+str(ifAugment)+"optim"+str(whichOptim)+"step"+str(stepSize)
 
     if(trainOrPredict == "train"):
         training_data = get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles)
@@ -145,7 +147,7 @@ def main():
         else:
             # original scheduler, gives better performances apparently!?            
             optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.0001)
-            lr_scheduler1 = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=float(gamma))
+            lr_scheduler1 = lr_scheduler.StepLR(optimizer_ft, step_size=stepSize, gamma=float(gamma))
             
         os.mkdir('crops'+preName+'/') 
 

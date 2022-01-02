@@ -63,6 +63,12 @@ def dice_loss(y_true, y_pred):
     return 1. - score
 
 
+def get_lr_metric(optimizer):
+    def lr(y_true, y_pred):
+        return optimizer.lr
+    return lr
+    
+
 class UNet():
 
     def __init__(self, checkpoint_name):
@@ -254,7 +260,11 @@ class UNet():
         x = Lambda(lambda x: x[:, :, :, 1], output_shape=self.config['output_shape'])(x)
         self.net = Model(inputs=inputs, outputs=x)
 
-        self.net.compile(optimizer=RMSprop(), loss=loss, metrics=[dice_coef,dice_coef_loss,dice_loss])
+        # Emil added to be able to print learning rate
+        RMSoptimiser = RMSprop()
+        lr_metric = get_lr_metric(RMSoptimiser)
+
+        self.net.compile(optimizer=RMSoptimiser, loss=loss, metrics=[dice_coef,lr_metric])
         return
 
     def train(self):

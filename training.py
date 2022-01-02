@@ -17,15 +17,15 @@ from Dataset import GetDataTilesArray, GetDataSeqTilesFolder
 from loss import calc_loss, calc_lossCraig
 
 
-
-
-def print_metrics(metrics, epoch_samples, phase,f):
+def print_metrics(metrics, epoch_samples, phase, f, lr):
     outputs = []
     for k in metrics.keys():
-        outputs.append("{}: {:4f}".format(k, metrics[k] / epoch_samples))
-
+        outputs.append("{}: {:f}".format(k, metrics[k] / epoch_samples))
+    # to print learning rate, which we get using scheduler.get_last_lr()
+    outputs.append("LR: {:e}".format(lr[0]))        
     print("{}: {}".format(phase, ", ".join(outputs)))
     print("{}: {}".format(phase, ", ".join(outputs)),file=f)
+
 
 # dumps first tile from training with its predicted mask and ground truth mask
 def dump_predictions(labels,outputs,epoch,preName,phase,shape=1024):
@@ -40,6 +40,7 @@ def dump_predictions(labels,outputs,epoch,preName,phase,shape=1024):
     else:
         plt.imsave("crops"+preName+"/valLabels_epoch"+str(epoch)+".png",  labTmp[0,0:shape,0:shape])
         plt.imsave("crops"+preName+"/valPredicted_epoch"+str(epoch)+".png", outTmp[0,0:shape,0:shape])
+
         
 def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, num_epochs=25):
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -77,15 +78,13 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, nu
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
-
                 # statistics
                 epoch_samples += inputs.size(0)
                 # writing training predictions
                 if(writePred==0):
                     dump_predictions(labels,outputs,epoch,preName,phase)
                     writePred=1                                    
-            
-            print_metrics(metrics, epoch_samples, phase,f)
+            print_metrics(metrics, epoch_samples, phase, f, scheduler.get_last_lr())
             epoch_loss = metrics['loss'] / epoch_samples
             # deep copy the model
             if phase == 'val' and epoch_loss < best_loss:
