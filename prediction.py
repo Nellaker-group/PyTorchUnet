@@ -17,10 +17,8 @@ import math
 import matplotlib
 import matplotlib.pyplot as plt
 import random
-from torch.utils.data.sampler import Sampler
 
 from Dataset import GetDataTilesArray, GetDataSeqTilesFolder
-from Sampler import RandomSampler, SeqSamplerDatasetSize, SeqSamplerUniform
 
 def predict(model, pathDir, imageDir, device, preName):
 

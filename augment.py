@@ -77,9 +77,11 @@ def augmenterTmp(image):
 # I have to add .copy() to make it work with transforming it to a tensor
 # see this for more:
 # https://stackoverflow.com/questions/20843544/np-rot90-corrupts-an-opencv-image
-def augmenter(image,mask):
+def augmenter(image,mask,augSeed):
+    # for getting random sampling for augmentation that does not interfer with sampling of tiles
+    rng1 = np.random.RandomState(augSeed)
     # half of the time it augments
-    choice=np.random.randint(0,10)
+    choice=rng1.randint(0,10)
     if choice == 5:
         # flips array left right (vertically)
         return(np.fliplr(image).copy(),np.fliplr(mask).copy(),choice)
@@ -94,7 +96,7 @@ def augmenter(image,mask):
         return(np.rot90(image, k=1, axes=(0,1)).copy(),np.rot90(mask, k=1, axes=(0,1)).copy(),choice)
     elif choice == 9:
         # add random noise
-        noise = np.random.normal(0,1,(1024,1024))
+        noise = rng1.normal(0,1,(1024,1024))
         return(image+noise,mask,choice)
     elif choice == 10:
         # do gausian blur with a 2D gaussian with SD = 1

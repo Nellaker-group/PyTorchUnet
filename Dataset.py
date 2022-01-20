@@ -12,7 +12,7 @@ from augment import augmenter
 
 # training is done with a montage
 class GetDataTilesArray(Dataset):
-    def __init__(self, whichData, preName, pathDir="", transform=None, ifAugment=0):
+    def __init__(self, whichData, preName, augSeed, pathDir="", transform=None, ifAugment=0):
         # define the size of the tiles to be working on
         shape = 1024
         assert whichData in ['train', 'validation']            
@@ -26,6 +26,9 @@ class GetDataTilesArray(Dataset):
         self.stdIm=[]
         self.epochs=0
         self.ifAugment=ifAugment
+
+        self.augSeed=augSeed
+        
         
         for file in files:
             if "_mask.npy" in file:
@@ -83,7 +86,7 @@ class GetDataTilesArray(Dataset):
 
         # only augments training images - does 50 % of the time - rotates, flips, blur or noise
         if self.whichData=="train" and self.ifAugment:
-            image,mask,choice = augmenter(image,mask)
+            image,mask,choice = augmenter(image,mask,self.augSeed)
 
         assert np.shape(image) == (1024,1024)
         assert np.shape(mask) == (1024,1024)

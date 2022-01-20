@@ -56,8 +56,6 @@ def main():
         print("7. gamma (for decaying learning rate - only for training) , 8. path of weights (only for predicting)")
         sys.exit("")
 
-
-
     prs = argparse.ArgumentParser()
     prs.add_argument('--gpu', help='which GPU to run on', type=str)
     prs.add_argument('--mode', help='train or predict', type=str)
@@ -72,7 +70,9 @@ def main():
     prs.add_argument('--optimiser', help='which optimiser to use, (cyclicLR=0, stepLR=1)', type=int, default=0)
     prs.add_argument('--dilate', help='to use UNet with dilations or not', type=int, default=1)
     prs.add_argument('--stepSize', help='which step size to use for stepLR optimiser (--optimiser 1)', type=int, default=0)
-
+    prs.add_argument('--torchSeed', help='seed for PyTorch so can control initialization  of weights', type=int, default=0)
+    prs.add_argument('--sizeBasedSamp', help='if sampling from datasets should depend on the size of the datasets (yes=1, no=0)', type=int, default=0)
+    prs.add_argument('--LR', help='start learning rate', type=float)
 
     args = vars(prs.parse_args())
     assert args['mode'] in ['train', 'predict']
@@ -81,6 +81,7 @@ def main():
     assert args['dilate'] in [0,1]
     assert (args['optimiser'] in [1] and args['gamma']>0) or (args['optimiser'] in [0] and args['gamma']==0)
     assert (args['optimiser'] in [1] and args['stepSize']>0) or (args['optimiser'] in [0] and args['stepSize']==0)
+    assert args['sizeBasedSamp'] in [0,1]
 
     assert args['gpu'] in ['0','1','2','3']
     gpu=args['gpu']
@@ -100,7 +101,12 @@ def main():
     gamma=args['gamma']
     ifAugment=args['augment']
     whichOptim=args['optimiser']
+    ifSizeBased=args['sizeBasedSamp']
+    learningRate=args['LR']
 
+    if args['torchSeed']>0:
+        torch.manual_seed(args['torchSeed'])
+        print("TORCH SEED IS: "+str(args['torchSeed']))
 
     print("IT IS ASSUMED THAT THIS SCRIPT IS EXECUTED FROM THE DIRECTORY OF THE FILE")
 
@@ -108,6 +114,7 @@ def main():
 
     assert trainOrPredict in ['train', 'predict']
 
+    #device = torch.device("cpu")
     device = select_gpu(gpu)
     print(device)
         
@@ -119,7 +126,11 @@ def main():
     else:
         model = UNetnoDial(n_class=num_class).to(device)
 
-    #model.double()
+    print("weights are:")
+    for param in model.parameters():
+        print(param[0:10])
+        break
+    
     print(model)
     
     print("N parameters:")
@@ -133,26 +144,28 @@ def main():
     else:
         randOrSeq = "Random"
 
-    preName = randOrSeq+"Tiles_epochs"+str(noEpochs)+"time"+date+"gamma"+str(gamma)+"seed"+str(seed)+"aug"+str(ifAugment)+"optim"+str(whichOptim)+"step"+str(stepSize)
+    preName = randOrSeq+"Tiles_epochs"+str(noEpochs)+"time"+date+"gamma"+str(gamma)+"seed"+str(seed)+"aug"+str(ifAugment)+"optim"+str(whichOptim)+"step"+str(stepSize)+"sizeBased"+str(ifSizeBased)+"LR"+str(learningRate)
+    # for the sampling of the augmentation
+    augSeed = np.random.randint(0,100000)
 
     if(trainOrPredict == "train"):
-        training_data = get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles)
+        training_data = get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased)
 
         if whichOptim==0:
 
-            optimizer_ft = optim.RMSprop(filter(lambda p: p.requires_grad, model.parameters()), lr=0.0001)
+            optimizer_ft = optim.RMSprop(filter(lambda p: p.requires_grad, model.parameters()), lr=learningRate)
             # same scheduler as craig is using 
-            lr_scheduler1 = lr_scheduler.CyclicLR(optimizer_ft, base_lr=0.00001, max_lr=0.0005, mode='triangular')
+            lr_scheduler1 = lr_scheduler.CyclicLR(optimizer_ft, base_lr=(learningRate/10), max_lr=(learningRate*5), mode='triangular')
 
         else:
             # original scheduler, gives better performances apparently!?            
-            optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.0001)
+            optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=learningRate)
             lr_scheduler1 = lr_scheduler.StepLR(optimizer_ft, step_size=stepSize, gamma=float(gamma))
             
         os.mkdir('crops'+preName+'/') 
 
         f=open("log"+preName+".log","w")
-        model = train_model(model, training_data, device, optimizer_ft, lr_scheduler1, f, preName, num_epochs=noEpochs)
+        model = train_model(model, training_data, device, optimizer_ft, lr_scheduler1, f, preName, whichOptim, num_epochs=noEpochs)
         if os.path.isdir('weights/'): 
             torch.save(model.state_dict(),"weights/weights"+preName+".dat")
         else:

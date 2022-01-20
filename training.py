@@ -42,7 +42,7 @@ def dump_predictions(labels,outputs,epoch,preName,phase,shape=1024):
         plt.imsave("crops"+preName+"/valPredicted_epoch"+str(epoch)+".png", outTmp[0,0:shape,0:shape])
 
         
-def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, num_epochs=25):
+def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, whichOptim, num_epochs=25):
     best_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 1e10
     for epoch in range(num_epochs):
@@ -78,6 +78,9 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, nu
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
+                        # if cyclicLR we also have to call scheduler here, to increase LR
+                        if whichOptim == 0:
+                            scheduler.step()
                 # statistics
                 epoch_samples += inputs.size(0)
                 # writing training predictions
@@ -91,8 +94,9 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, nu
                 print("saving best model")
                 best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(model.state_dict())
-        # emil moved this to here in accordance with HAPPY pipeline
-        scheduler.step()
+        # emil moved this to here in accordance with HAPPY pipeline - but only for the exponential LR
+        if whichOptim == 1:
+            scheduler.step()
         time_elapsed = time.time() - since
         print('{:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
     print('Best val loss: {:4f}'.format(best_loss))

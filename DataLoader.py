@@ -6,10 +6,10 @@ from torch.utils.data.sampler import Sampler
 import os
 
 from Dataset import GetDataTilesArray, GetDataSeqTilesFolder
-from Sampler import RandomSampler, SeqSamplerDatasetSize, SeqSamplerUniform, ValSampler
+from Sampler import RandomSamplerUniform, RandomSamplerDatasetSize, SeqSamplerUniform, SeqSamplerDatasetSize, ValSampler
 
 
-def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles):
+def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased):
 
     # use the same transformations for train/val in this example
     trans = transforms.Compose([
@@ -23,8 +23,8 @@ def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles):
     print(imageDir)
 
     # read in data
-    train_set = GetDataTilesArray("train", preName, pathDir=trainPathDir, transform=trans, ifAugment=ifAugment)
-    val_set = GetDataTilesArray("validation", preName, pathDir=valPathDir, transform=trans)
+    train_set = GetDataTilesArray("train", preName, augSeed, pathDir=trainPathDir, transform=trans, ifAugment=ifAugment)
+    val_set = GetDataTilesArray("validation", preName, augSeed, pathDir=valPathDir, transform=trans)
 
     image_datasets = {
         'train': train_set, 'val': val_set
@@ -38,7 +38,10 @@ def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles):
 
     if imageDir:
         # read in data
-        samplie_train = SeqSamplerDatasetSize(train_set, sample_size_train, 1024, 0)
+        if ifSizeBased == 1:
+            samplie_train = SeqSamplerUniform(train_set, sample_size_train, 1024, 0)
+        else:
+            samplie_train = SeqSamplerDatasetSize(train_set, sample_size_train, 1024, 0)
         samplie_val = ValSampler(val_set,  1024, 0)
         dataloaders = {
             'train': DataLoader(train_set, batch_size=batch_size, num_workers=0, sampler=samplie_train),
@@ -46,7 +49,10 @@ def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles):
         }
     else:
         # read in data
-        samplie_train = RandomSampler(train_set, sample_size_train, 1024, 0)
+        if ifSizeBased==1:
+            samplie_train = RandomSamplerDatasetSize(train_set, sample_size_train, 1024, 0)
+        else:
+            samplie_train = RandomSamplerUniform(train_set, sample_size_train, 1024, 0)
         samplie_val = ValSampler(val_set, 1024, 0)
         dataloaders = {
             'train': DataLoader(train_set, batch_size=batch_size, num_workers=0, sampler=samplie_train),
