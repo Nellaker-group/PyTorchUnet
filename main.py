@@ -12,6 +12,7 @@ from torch.utils.data.sampler import Sampler
 import numpy as np
 from datetime import datetime
 import argparse
+import random
 
 import loss
 import Sampler
@@ -147,6 +148,8 @@ def main():
     preName = randOrSeq+"Tiles_epochs"+str(noEpochs)+"time"+date+"gamma"+str(gamma)+"seed"+str(seed)+"aug"+str(ifAugment)+"optim"+str(whichOptim)+"step"+str(stepSize)+"sizeBased"+str(ifSizeBased)+"LR"+str(learningRate)
     # for the sampling of the augmentation
     augSeed = np.random.randint(0,100000)
+    random.seed(augSeed)
+
 
     if(trainOrPredict == "train"):
         training_data = get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased)

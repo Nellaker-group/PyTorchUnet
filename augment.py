@@ -2,6 +2,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 import scipy.stats as st
 from scipy.ndimage.filters import gaussian_filter
+import albumentations as A
 
 # for creating a gaussian kernel - that can be used a kernel
 # from https://stackoverflow.com/questions/29731726/how-to-calculate-a-gaussian-kernel-matrix-efficiently-in-numpy
@@ -104,4 +105,20 @@ def augmenter(image,mask,augSeed):
     else:
         return(image,mask,choice)
     
+
+# inspired by Claudia's list of augs in ./projects/placenta/nuc_train.py
+# ReplayCompose, so that we can record which augmentations are used
+transform = A.ReplayCompose([
+    #A.RandomCrop(width=256, height=256),
+    A.HorizontalFlip(p=0.5),
+    A.RandomRotate90(p=0.5),
+    A.RandomBrightnessContrast(p=0.25),
+    A.GaussianBlur(p=0.25),
+    A.GaussNoise(p=0.25,var_limit=(1,5))
+])
+
+
+def albumentationAugmenter(image,mask):
+    transformed=transform(image=image, mask=mask)
+    return(transformed['image'], transformed['mask'], transformed['replay'],1)
 

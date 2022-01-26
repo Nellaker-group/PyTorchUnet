@@ -8,7 +8,8 @@ import sys
 import math
 import matplotlib
 import matplotlib.pyplot as plt
-from augment import augmenter
+import json
+from augment import augmenter, albumentationAugmenter
 
 # training is done with a montage
 class GetDataTilesArray(Dataset):
@@ -28,8 +29,7 @@ class GetDataTilesArray(Dataset):
         self.ifAugment=ifAugment
 
         self.augSeed=augSeed
-        
-        
+                
         for file in files:
             if "_mask.npy" in file:
                 continue
@@ -86,7 +86,7 @@ class GetDataTilesArray(Dataset):
 
         # only augments training images - does 50 % of the time - rotates, flips, blur or noise
         if self.whichData=="train" and self.ifAugment:
-            image,mask,choice = augmenter(image,mask,self.augSeed)
+            image,mask,replay,choice = albumentationAugmenter(image,mask)
 
         assert np.shape(image) == (1024,1024)
         assert np.shape(mask) == (1024,1024)
@@ -94,11 +94,18 @@ class GetDataTilesArray(Dataset):
         if choice > 0 and first == 1:
             # crops from first run
             if self.whichData=="train":
-                plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_choice"+str(choice)+".png", image)
-                plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_choice"+str(choice)+"_mask.png", mask)
+                plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+".png", image)
+                plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_mask.png", mask)
+                with open("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_whichAlbu.txt", 'w') as file:
+                    file.write(json.dumps(replay))
+                file.close()
+                
             elif self.whichData=="validation":
-                plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_choice"+str(choice)+".png", image)
-                plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_choice"+str(choice)+"_mask.png", mask)
+                plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+".png", image)
+                plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_mask.png", mask)
+                with open("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_whichAlbu.txt", 'w') as file:
+                    file.write(json.dumps(replay))
+                file.close()
 
         normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
         image = normalize(image)
