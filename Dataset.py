@@ -39,7 +39,8 @@ class GetDataTilesArray(Dataset):
             self.meanIm.append(np.mean(im))
             self.stdIm.append(np.std(im))
             newFile = file.replace(".npy","_mask.npy")
-            mask = np.load(pathDir + newFile)
+            #because empty spaces are 1 and adipocytes 0 originally
+            mask = 1-np.load(pathDir + newFile)
             image_list.append(im)
             mask_list.append(mask)
 
@@ -82,11 +83,16 @@ class GetDataTilesArray(Dataset):
             elif self.whichData=="validation":
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
-            self.epochs += 1
+
 
         # only augments training images - does 50 % of the time - rotates, flips, blur or noise
         if self.whichData=="train" and self.ifAugment:
-            image,mask,replay,choice = albumentationAugmenter(image,mask)
+            image,mask,replay,choice,crop = albumentationAugmenter(image,mask)
+
+        # to pad with zeros
+        if(np.shape(image)<(1024,1024)):
+            image=np.pad(image, [(1024-crop)//2, (1024-crop)//2], mode='constant')
+            mask=np.pad(mask, [(1024-crop)//2, (1024-crop)//2], mode='constant')
 
         assert np.shape(image) == (1024,1024)
         assert np.shape(mask) == (1024,1024)
@@ -96,16 +102,15 @@ class GetDataTilesArray(Dataset):
             if self.whichData=="train":
                 plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+".png", image)
                 plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_mask.png", mask)
-                with open("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_whichAlbu.txt", 'w') as file:
-                    file.write(json.dumps(replay))
-                file.close()
-                
+                with open("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_whichAlbu.txt", 'w') as f:
+                    print(replay, file=f)
+                f.close()
             elif self.whichData=="validation":
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+".png", image)
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_mask.png", mask)
-                with open("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_whichAlbu.txt", 'w') as file:
-                    file.write(json.dumps(replay))
-                file.close()
+
+        if first == 1:
+            self.epochs += 1
 
         normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
         image = normalize(image)
