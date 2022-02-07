@@ -119,11 +119,11 @@ def albumentationAugmenter(image,mask):
         A.CenterCrop (crop, crop, p=0.5),
         A.HorizontalFlip(p=0.5),
         A.RandomRotate90(p=0.5),
-        #RandomBrigtnessContrast was causing problems distoring the augment images beyond reconigition
-        #A.RandomBrightnessContrast(p=0.25),
-        A.GaussianBlur(p=0.25)
-        #GaussNoise was causing problems distoring the augment images beyond reconigition
-        #A.GaussNoise(p=0.25,var_limit=(1,5))
+        #RandomBrigtnessContrast was causing problems distoring the augment images beyond reconigition - should be fixed now
+        A.RandomBrightnessContrast(p=0.25, brightness_limit=0.1, contrast_limit=0.1),
+        A.GaussianBlur(p=0.25),
+        #GaussNoise was causing problems distoring the augment images beyond reconigition - should be fixed now
+        A.GaussNoise(p=0.25,var_limit=(0.1, 0.5))
     ])
 
     transformed=transform(image=image, mask=mask)

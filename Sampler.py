@@ -43,6 +43,56 @@ class RandomSamplerUniform(Sampler):
 
     def __len__(self):
         return len(self.data_source)
+    
+    
+    
+    
+class RandomSamplerUniformFrankenstein(Sampler):
+    """Samples 4 pieces of tile randomly from montages and stitches them together to one tile, with replacement.
+    Arguments:
+        data_source (Dataset): dataset to sample from
+    """
+
+    # so this has to have the data
+
+    def __init__(self, data_source, sample_size, shape, counter):
+
+        self.data_source = data_source
+        self.sample_size = sample_size
+        self.shape = shape
+        self.counter = counter
+
+    # this has to provide the iterator , the iterator will use the __getitem__ method
+    def __iter__(self):        
+
+        wdw_H, wdw_W = (1024,1024)
+        listie=[]
+        first = 1
+
+        for sample_idx in range(self.sample_size):
+
+            xs = []
+            ys = []
+            rand_var = []
+            x0, y0 = (0,0)
+            # for getting them 4 parts
+            for i in range(4):
+                rand_var.append(np.random.randint(0,len(self.data_source.input_images)))
+                H, W=self.data_source.input_images[rand_var[i]].shape
+                # to make sure we do not get np.random.randint(0, 0) which gives an error
+                rangeH=max(H - wdw_H,1)
+                rangeW=max(W - wdw_W,1)
+                # to slice and dice
+                xs.append(np.random.randint(0, rangeH))
+                ys.append(np.random.randint(0, rangeW))
+                cutx, cuty = np.random.randint(0, wdw_H), np.random.randint(0, wdw_W)
+            listie.append((rand_var,(xs,ys),(cutx,cuty),first))
+            first = 0
+            self.counter += 1
+        return(iter(listie))
+
+    def __len__(self):
+        return len(self.data_source)
 
 
 class RandomSamplerDatasetSize(Sampler):
@@ -251,4 +301,3 @@ class ValSampler(Sampler):
 
     def __len__(self):
         return len(self.data_source)
-

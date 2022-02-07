@@ -72,6 +72,7 @@ def main():
     prs.add_argument('--dilate', help='to use UNet with dilations or not', type=int, default=1)
     prs.add_argument('--stepSize', help='which step size to use for stepLR optimiser (--optimiser 1)', type=int, default=0)
     prs.add_argument('--torchSeed', help='seed for PyTorch so can control initialization  of weights', type=int, default=0)
+    prs.add_argument('--frankenstein', help='assembles tiles from 4 different parts from different tiles (works for montages and uniform sampling across datasets)', type=int, default=0)
     prs.add_argument('--sizeBasedSamp', help='if sampling from datasets should depend on the size of the datasets (yes=1, no=0)', type=int, default=0)
     prs.add_argument('--LR', help='start learning rate', type=float)
 
@@ -80,6 +81,7 @@ def main():
     assert args['optimiser'] in [0,1]
     assert args['augment'] in [0,1]
     assert args['dilate'] in [0,1]
+    assert args['frankenstein'] in [0,1]
     assert (args['optimiser'] in [1] and args['gamma']>0) or (args['optimiser'] in [0] and args['gamma']==0)
     assert (args['optimiser'] in [1] and args['stepSize']>0) or (args['optimiser'] in [0] and args['stepSize']==0)
     assert args['sizeBasedSamp'] in [0,1]
@@ -104,6 +106,7 @@ def main():
     whichOptim=args['optimiser']
     ifSizeBased=args['sizeBasedSamp']
     learningRate=args['LR']
+    frank=args['frankenstein']
 
     if args['torchSeed']>0:
         torch.manual_seed(args['torchSeed'])
@@ -145,14 +148,14 @@ def main():
     else:
         randOrSeq = "Random"
 
-    preName = randOrSeq+"Tiles_epochs"+str(noEpochs)+"time"+date+"gamma"+str(gamma)+"seed"+str(seed)+"aug"+str(ifAugment)+"optim"+str(whichOptim)+"step"+str(stepSize)+"sizeBased"+str(ifSizeBased)+"LR"+str(learningRate)
+    preName = randOrSeq+"Tiles_ep"+str(noEpochs)+"t"+date+"g"+str(gamma)+"s"+str(seed)+"au"+str(ifAugment)+"op"+str(whichOptim)+"st"+str(stepSize)+"sB"+str(ifSizeBased)+"LR"+str(learningRate)+"fr"+str(frank)
     # for the sampling of the augmentation
     augSeed = np.random.randint(0,100000)
     random.seed(augSeed)
 
 
     if(trainOrPredict == "train"):
-        training_data = get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased)
+        training_data = get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank)
 
         if whichOptim==0:
 

@@ -13,7 +13,7 @@ from augment import augmenter, albumentationAugmenter
 
 # training is done with a montage
 class GetDataTilesArray(Dataset):
-    def __init__(self, whichData, preName, augSeed, pathDir="", transform=None, ifAugment=0):
+    def __init__(self, whichData, preName, augSeed, frank, pathDir="", transform=None, ifAugment=0):
         # define the size of the tiles to be working on
         shape = 1024
         assert whichData in ['train', 'validation']            
@@ -27,7 +27,7 @@ class GetDataTilesArray(Dataset):
         self.stdIm=[]
         self.epochs=0
         self.ifAugment=ifAugment
-
+        self.frank=frank
         self.augSeed=augSeed
                 
         for file in files:
@@ -71,8 +71,39 @@ class GetDataTilesArray(Dataset):
     def __getitem__(self, idx):
         i,x,y,first = idx
         shape = 1024
-        image = self.input_images[i][x:(x+shape),y:(y+shape)] 
-        mask = self.target_masks[i][x:(x+shape),y:(y+shape)] 
+
+        if self.whichData=="train" and self.frank == 1:
+            
+            # unpacking coordinate lists (xlist and ylist) and where to cut x and y (cutx and cuty)
+            xlist=x[0]
+            ylist=x[1]
+            cutx=y[0]
+            cuty=y[1]
+            
+            # upper left corner, upper right corner, lower left corner, lower right corner
+            image1 = self.input_images[i[0]][xlist[0]:(xlist[0]+cutx),ylist[0]:(ylist[0]+cuty)] 
+            image2 = self.input_images[i[1]][xlist[1]:(xlist[1]+cutx),(ylist[1]+cuty):(ylist[1]+shape)] 
+            image3 = self.input_images[i[2]][(xlist[2]+cutx):(xlist[2]+shape),ylist[2]:(ylist[2]+cuty)] 
+            image4 = self.input_images[i[3]][(xlist[3]+cutx):(xlist[3]+shape),(ylist[3]+cuty):(ylist[3]+shape)] 
+
+            # concat upper and lower parts (add columns together so has more columns now)
+            imageCat = np.concatenate((image1,image2),axis=1)
+            imageCat2 = np.concatenate((image3,image4),axis=1)
+            # concat upper and lower part (add rows together so has more rows now)
+            image = np.concatenate((imageCat,imageCat2),axis=0)
+            
+            # upper left corner, upper right corner, lower left corner, lower right corner
+            mask1 = self.target_masks[i[0]][xlist[0]:(xlist[0]+cutx),ylist[0]:(ylist[0]+cuty)] 
+            mask2 = self.target_masks[i[1]][xlist[1]:(xlist[1]+cutx),(ylist[1]+cuty):(ylist[1]+shape)] 
+            mask3 = self.target_masks[i[2]][(xlist[2]+cutx):(xlist[2]+shape),ylist[2]:(ylist[2]+cuty)] 
+            mask4 = self.target_masks[i[3]][(xlist[3]+cutx):(xlist[3]+shape),(ylist[3]+cuty):(ylist[3]+shape)] 
+            maskCat = np.concatenate((mask1,mask2),axis=1)
+            maskCat2 = np.concatenate((mask3,mask4),axis=1)
+            mask = np.concatenate((maskCat,maskCat2),axis=0)
+
+        else:
+            image = self.input_images[i][x:(x+shape),y:(y+shape)] 
+            mask = self.target_masks[i][x:(x+shape),y:(y+shape)] 
         choice=0
 
         if first == 1:
@@ -83,7 +114,6 @@ class GetDataTilesArray(Dataset):
             elif self.whichData=="validation":
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+".png", image)
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
-
 
         # only augments training images - does 50 % of the time - rotates, flips, blur or noise
         if self.whichData=="train" and self.ifAugment:
@@ -104,17 +134,16 @@ class GetDataTilesArray(Dataset):
                 plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_mask.png", mask)
                 with open("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_whichAlbu.txt", 'w') as f:
                     print(replay, file=f)
-                f.close()
+                f.close()                
             elif self.whichData=="validation":
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+".png", image)
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+str(i)+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_mask.png", mask)
-
+                
         if first == 1:
             self.epochs += 1
 
         normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
         image = normalize(image)
-
         if self.transform:
             image = self.transform(image)
             mask = self.transform(mask)
@@ -170,5 +199,3 @@ class GetDataSeqTilesFolder(Dataset):
             image = self.transform(image)
             mask = self.transform(mask)
         return [image, mask]
-
-

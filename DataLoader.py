@@ -6,10 +6,10 @@ from torch.utils.data.sampler import Sampler
 import os
 
 from Dataset import GetDataTilesArray, GetDataSeqTilesFolder
-from Sampler import RandomSamplerUniform, RandomSamplerDatasetSize, SeqSamplerUniform, SeqSamplerDatasetSize, ValSampler
+from Sampler import RandomSamplerUniform, RandomSamplerUniformFrankenstein, RandomSamplerDatasetSize, SeqSamplerUniform, SeqSamplerDatasetSize, ValSampler
 
 
-def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased):
+def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank):
 
     # use the same transformations for train/val in this example
     trans = transforms.Compose([
@@ -23,8 +23,8 @@ def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBase
     print(imageDir)
 
     # read in data
-    train_set = GetDataTilesArray("train", preName, augSeed, pathDir=trainPathDir, transform=trans, ifAugment=ifAugment)
-    val_set = GetDataTilesArray("validation", preName, augSeed, pathDir=valPathDir, transform=trans)
+    train_set = GetDataTilesArray("train", preName, augSeed, frank, pathDir=trainPathDir, transform=trans, ifAugment=ifAugment)
+    val_set = GetDataTilesArray("validation", preName, augSeed, frank, pathDir=valPathDir, transform=trans)
 
     image_datasets = {
         'train': train_set, 'val': val_set
@@ -51,6 +51,8 @@ def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBase
         # read in data
         if ifSizeBased==1:
             samplie_train = RandomSamplerDatasetSize(train_set, sample_size_train, 1024, 0)
+        elif frank == 1:
+            samplie_train = RandomSamplerUniformFrankenstein(train_set, sample_size_train, 1024, 0)
         else:
             samplie_train = RandomSamplerUniform(train_set, sample_size_train, 1024, 0)
         samplie_val = ValSampler(val_set, 1024, 0)
