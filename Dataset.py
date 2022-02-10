@@ -117,7 +117,16 @@ class GetDataTilesArray(Dataset):
 
         # only augments training images - does 50 % of the time - rotates, flips, blur or noise
         if self.whichData=="train" and self.ifAugment:
-            image,mask,replay,choice,crop = albumentationAugmenter(image,mask)
+            #emil convert to uint8 instead of float32 - might cause issues
+            #image = image.astype(np.uint8, copy=False)
+            #mask = mask.astype(np.uint8, copy=False)
+            #because gaussNoise and RandomBrightness only made for floats between 0 and 1
+            image = image/255.0
+            image,mask,replay,choice,crop = albumentationAugmenter(image,mask,self.epochs)
+            #and convert it back to float32 - because rest of pipeline built for that
+            #image = image.astype(np.float32, copy=False)
+            #mask = mask.astype(np.float32, copy=False)
+            image = image*255.0
 
         # to pad with zeros
         if(np.shape(image)<(1024,1024)):

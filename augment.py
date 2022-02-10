@@ -39,42 +39,6 @@ def blur(a,filter="boxlur"):
     arraylist = np.array(arraylist)
     arraylist_sum = np.sum(arraylist, axis=0)
     return arraylist_sum
-
-def augmenterTmp(image):
-
-    choice=np.random.randint(0,9)
-
-    if choice == 3:
-        # flips array left right (vertically)
-        image=np.fliplr(image)
-        return(image)
-    elif choice == 4:
-        # flips array up down (horizontically)
-        image=np.flipud(image)
-        return(image)
-    elif choice == 5:
-        # moving each element one place clockwise
-        image=np.rot90(image, k=1, axes=(1,0))
-        return(image)
-    elif choice == 6:
-        # moving each element one place counter clockwise
-        image=np.rot90(image, k=1, axes=(0,1))
-        return(image)
-    elif choice == 7:
-        # gaussian noise
-        noise = np.random.normal(0,1,(1024,1024))
-        return(image+noise)
-        # ...
-    elif choice == 8:
-        # manual blurring using numpy
-        return(blur(image))
-        # ...
-    elif choice == 9:
-        # scipy gaussian blurring
-        return(gaussian_filter(image, sigma=1))
-        # ...
-    else:
-        return(image)
     
 # I have to add .copy() to make it work with transforming it to a tensor
 # see this for more:
@@ -109,7 +73,8 @@ def augmenter(image,mask,augSeed):
 
 
 
-def albumentationAugmenter(image,mask):
+def albumentationAugmenter(image,mask,epochs):
+
     crop=random.choice(list(range(256,1024,2)))
     # inspired by Claudia's list of augs in ./projects/placenta/nuc_train.py
     # ReplayCompose, so that we can record which augmentations are used
@@ -120,10 +85,16 @@ def albumentationAugmenter(image,mask):
         A.HorizontalFlip(p=0.5),
         A.RandomRotate90(p=0.5),
         #RandomBrigtnessContrast was causing problems distoring the augment images beyond reconigition - should be fixed now
-        A.RandomBrightnessContrast(p=0.25, brightness_limit=0.1, contrast_limit=0.1),
+        #tried setting brightness_by_maxBoolean to false (If True adjust contrast by image dtype maximum - and we have float32) 
+        A.RandomBrightnessContrast(p=0.25, brightness_limit=0.2, contrast_limit=0.2),
         A.GaussianBlur(p=0.25),
         #GaussNoise was causing problems distoring the augment images beyond reconigition - should be fixed now
-        A.GaussNoise(p=0.25,var_limit=(0.1, 0.5))
+        #var_limit=(0.05, 0.2) from Claudia's code (/gpfs3/well/lindgren/users/swf744/git/HAPPY/projects/placenta/nuc_train.py)
+        #var_limit=(0.01, 0.05) from Claudia's code (/gpfs3/well/lindgren/users/swf744/git/HAPPY/projects/placenta/nuc_train.py)
+        #after doing grid search and manually inspecting images, I chose var=0.01
+        A.GaussNoise(p=0.25,var_limit=(0.01, 0.01))
+        #changed per_channel=False
+        #A.GaussNoise(p=0.25,var_limit=(0, 0),per_channel=False)
     ])
 
     transformed=transform(image=image, mask=mask)
