@@ -79,8 +79,7 @@ def albumentationAugmenter(image,mask,epochs):
     # inspired by Claudia's list of augs in ./projects/placenta/nuc_train.py
     # ReplayCompose, so that we can record which augmentations are used
     transform = A.ReplayCompose([
-        # I cannot make CropAndPad work
-        #A.CropAndPad(percent=(-0.1,-0.25),p=0.5),
+        #I cannot make CropAndPad work
         A.CenterCrop (crop, crop, p=0.5),
         A.HorizontalFlip(p=0.5),
         A.RandomRotate90(p=0.5),
@@ -89,12 +88,8 @@ def albumentationAugmenter(image,mask,epochs):
         A.RandomBrightnessContrast(p=0.25, brightness_limit=0.2, contrast_limit=0.2),
         A.GaussianBlur(p=0.25),
         #GaussNoise was causing problems distoring the augment images beyond reconigition - should be fixed now
-        #var_limit=(0.05, 0.2) from Claudia's code (/gpfs3/well/lindgren/users/swf744/git/HAPPY/projects/placenta/nuc_train.py)
-        #var_limit=(0.01, 0.05) from Claudia's code (/gpfs3/well/lindgren/users/swf744/git/HAPPY/projects/placenta/nuc_train.py)
         #after doing grid search and manually inspecting images, I chose var=0.01
         A.GaussNoise(p=0.25,var_limit=(0.01, 0.01))
-        #changed per_channel=False
-        #A.GaussNoise(p=0.25,var_limit=(0, 0),per_channel=False)
     ])
 
     transformed=transform(image=image, mask=mask)

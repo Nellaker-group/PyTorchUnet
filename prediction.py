@@ -18,7 +18,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import random
 
-from Dataset import GetDataTilesArray, GetDataSeqTilesFolder
+from Dataset import GetDataMontage, GetDataFolder
 
 def predict(model, pathDir, imageDir, device, preName):
 

@@ -13,7 +13,7 @@ import numpy as np
 from torch.utils.data.sampler import Sampler
 import matplotlib.pyplot as plt
 
-from Dataset import GetDataTilesArray, GetDataSeqTilesFolder
+from Dataset import GetDataMontage, GetDataFolder
 from loss import calc_loss, calc_lossCraig
 
 
