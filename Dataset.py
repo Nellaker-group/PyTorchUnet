@@ -13,7 +13,7 @@ from augment import augmenter, albumentationAugmenter
 
 # training is done with a montage
 class GetDataMontage(Dataset):
-    def __init__(self, whichData, preName, augSeed, frank, pathDir="", transform=None, ifAugment=0):
+    def __init__(self, whichData, preName, augSeed, frank, normFile, pathDir="", transform=None, ifAugment=0):
         # define the size of the tiles to be working on
         shape = 1024
         assert whichData in ['train', 'validation']            
@@ -44,20 +44,11 @@ class GetDataMontage(Dataset):
             image_list.append(im)
             mask_list.append(mask)
 
-        # should normalise with training data
-        if self.whichData == "train":
-            self.totalMean = sum(self.meanIm) / len(self.meanIm)
-            self.totalStd = sum(self.stdIm) / len(self.stdIm)
-            f=open("weights/norm"+preName+".norm","w")
-            print(self.totalMean,file=f)
-            print(self.totalStd,file=f)
-            f.close()
-        # with val data it should read data from training data
-        else:
-            f=open("weights/norm"+preName+".norm","r")
-            self.totalMean = float(f.readline())
-            self.totalStd = float(f.readline())
-            f.close()
+        # should normalise with data from normFile
+        f=open(normFile,"r")
+        self.totalMean = float(f.readline())
+        self.totalStd = float(f.readline())
+        f.close()
         mask_array = np.asarray(mask_list)
         image_array = np.asarray(image_list)
         self.input_images = image_list
@@ -164,7 +155,7 @@ class GetDataMontage(Dataset):
 
 # training is done here
 class GetDataFolder(Dataset):
-    def __init__(self, whichData, preName, augSeed, frank, pathDir="", transform=None, ifAugment=0):
+    def __init__(self, whichData, preName, augSeed, frank, inputChannels, normFile, pathDir="", transform=None, ifAugment=0):
         # define the size of the tiles to be working on
         shape = 1024
         # so far can only predict with images in a folder
@@ -182,6 +173,9 @@ class GetDataFolder(Dataset):
         self.frank=frank
         self.augSeed=augSeed
         self.whichData = whichData
+        self.datasetMean=[]
+        self.datasetStd=[]
+        self.inputChannels=inputChannels
 
         whichFolder = 0
 
@@ -194,11 +188,18 @@ class GetDataFolder(Dataset):
                     continue
                 if not (".png" in file or ".jpg" in file):
                     continue
-                im = cv2.imread(pathDir + "/" + directory + "/" + file, cv2.IMREAD_GRAYSCALE)
-                assert np.shape(im) != ()
-                im = im.astype(np.float32)
-                if(np.shape(im)>(1024,1024)):
-                    im = im[0:1024,0:1024]
+                if inputChannels == 1:
+                    im = cv2.imread(pathDir + "/" + directory + "/" + file, cv2.IMREAD_GRAYSCALE)
+                    assert np.shape(im) != ()
+                    im = im.astype(np.float32)
+                    if(np.shape(im)>(1024,1024)):
+                        im = im[0:1024,0:1024]
+                else:
+                    im = cv2.imread(pathDir + "/" + directory + "/" + file)
+                    assert np.shape(im) != ()
+                    im = im.astype(np.float32)
+                    if(np.shape(im)>(1024,1024,3)):
+                        im = im[0:1024,0:1024,0:3]
                 mask = cv2.imread(pathDir + "/" + directory + "/mask_" + file, cv2.IMREAD_GRAYSCALE)
                 assert np.shape(mask) != ()
                 assert np.max(mask) == 255
@@ -216,21 +217,16 @@ class GetDataFolder(Dataset):
                 self.meanIm.append(np.mean(im))
                 self.stdIm.append(np.std(im))
             whichFolder += 1
+            self.datasetMean.append(np.mean(self.meanIm))
+            self.datasetStd.append(np.mean(self.stdIm))
+            self.meanIm=[]
+            self.stdIm=[]
 
-        # should normalise with training data
-        if self.whichData == "train":
-            self.totalMean = sum(self.meanIm) / len(self.meanIm)
-            self.totalStd = sum(self.stdIm) / len(self.stdIm)
-            f=open("weights/norm"+preName+".norm","w")
-            print(self.totalMean,file=f)
-            print(self.totalStd,file=f)
-            f.close()
-        # with val data it should read data from training data
-        else:
-            f=open("weights/norm"+preName+".norm","r")
-            self.totalMean = float(f.readline())
-            self.totalStd = float(f.readline())
-            f.close()
+        # should normalise with data from normFile
+        f=open(normFile,"r")
+        self.totalMean = float(f.readline())
+        self.totalStd = float(f.readline())
+        f.close()
 
         assert len(image_list) == len(mask_list)
 
@@ -255,18 +251,29 @@ class GetDataFolder(Dataset):
         dataName = str(data)+"_"+str(i)
 
         if self.whichData=="train" and self.frank == 1:
+
+            dataName = str(data)+"_"+str(i[0])
             
             # unpacking coordinate lists (xlist and ylist) and where to cut x and y (cutx and cuty)
             indexes = i[0]
             cuts = i[1]
-            cutx=cuts[0]
-            cuty=cuts[1]
-            
+            x0=cuts[0]
+            y0=cuts[1]
+            x1=cuts[2]
+            y1=cuts[3]
+            x2=cuts[4]
+            y2=cuts[5]
+            x3=cuts[6]
+            y3=cuts[7]
+            h=cuts[8]
+            w=cuts[9]
+            w1=cuts[10]            
+
             # upper left corner, upper right corner, lower left corner, lower right corner
-            image1 = self.input_images[data[0]][indexes[0]][0:cutx,0:cuty] 
-            image2 = self.input_images[data[1]][indexes[1]][0:cutx,cuty:shape] 
-            image3 = self.input_images[data[2]][indexes[2]][cutx:shape,0:cuty] 
-            image4 = self.input_images[data[3]][indexes[3]][cutx:shape,cuty:shape] 
+            image1 = self.input_images[data[0]][indexes[0]][x0:(x0+h),y0:(y0+w)]
+            image2 = self.input_images[data[1]][indexes[1]][x1:(x1+h),y1:(y1+(1024-w))]
+            image3 = self.input_images[data[2]][indexes[2]][x2:(x2+(1024-h)),y2:(y2+w1)]
+            image4 = self.input_images[data[3]][indexes[3]][x3:(x3+(1024-h)),y3:(y3+(1024-w1))]
 
             # concat upper and lower parts (add columns together so has more columns now)
             imageCat = np.concatenate((image1,image2),axis=1)
@@ -275,10 +282,10 @@ class GetDataFolder(Dataset):
             image = np.concatenate((imageCat,imageCat2),axis=0)
             
             # upper left corner, upper right corner, lower left corner, lower right corner
-            mask1 = self.target_masks[data[0]][indexes[0]][0:cutx,0:cuty]
-            mask2 = self.target_masks[data[1]][indexes[1]][0:cutx,cuty:shape]
-            mask3 = self.target_masks[data[2]][indexes[2]][cutx:shape,0:cuty]
-            mask4 = self.target_masks[data[3]][indexes[3]][cutx:shape,cuty:shape]
+            mask1 = self.target_masks[data[0]][indexes[0]][x0:(x0+h),y0:(y0+w)]
+            mask2 = self.target_masks[data[1]][indexes[1]][x1:(x1+h),y1:(y1+(1024-w))]
+            mask3 = self.target_masks[data[2]][indexes[2]][x2:(x2+(1024-h)),y2:(y2+w1)]
+            mask4 = self.target_masks[data[3]][indexes[3]][x3:(x3+(1024-h)),y3:(y3+(1024-w1))]
             maskCat = np.concatenate((mask1,mask2),axis=1)
             maskCat2 = np.concatenate((mask3,mask4),axis=1)
             mask = np.concatenate((maskCat,maskCat2),axis=0)
@@ -290,6 +297,10 @@ class GetDataFolder(Dataset):
             mask = self.target_masks[data][i] 
         choice=0
 
+        if self.inputChannels == 3:
+            #this makes the image being print correctly and is needed for the albumentations augs
+            image = cv2.cvtColor(image/255.0, cv2.COLOR_RGB2BGR)
+
         if first == 1:
             # crops from first run
             if self.whichData=="train":
@@ -298,6 +309,10 @@ class GetDataFolder(Dataset):
             elif self.whichData=="validation":
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+dataName+".png", image)
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+dataName+"_mask.png", mask)
+
+        if self.inputChannels == 3:
+            #this makes the image being print correctly
+            image = image*255
 
         # only augments training images - does 50 % of the time - rotates, flips, blur or noise
         if self.whichData=="train" and self.ifAugment:
@@ -317,8 +332,14 @@ class GetDataFolder(Dataset):
             image=np.pad(image, [(1024-crop)//2, (1024-crop)//2], mode='constant')
             mask=np.pad(mask, [(1024-crop)//2, (1024-crop)//2], mode='constant')
 
-        assert np.shape(image) == (1024,1024)
-        assert np.shape(mask) == (1024,1024)
+        if self.inputChannels == 3:
+            #this makes the image being print correctly
+            image = image/255.0
+            assert np.shape(image) == (1024,1024,3)
+            assert np.shape(mask) == (1024,1024)
+        else:
+            assert np.shape(image) == (1024,1024)
+            assert np.shape(mask) == (1024,1024)
 
         if choice > 0 and first == 1:
             # crops from first run
@@ -331,7 +352,10 @@ class GetDataFolder(Dataset):
             elif self.whichData=="validation":
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+dataName+"_albuChoice"+str(choice)+".png", image)
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+dataName+"_albuChoice"+str(choice)+"_mask.png", mask)
-                
+
+        if self.inputChannels == 3:
+            image = image*255.0
+                        
         if first == 1:
             self.epochs += 1
 

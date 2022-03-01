@@ -6,9 +6,9 @@ from torch.utils.data.sampler import Sampler
 import os
 
 from Dataset import GetDataMontage, GetDataFolder
-from Sampler import MontageSamplerUniform, MontageSamplerUniformFrankenstein, MontageSamplerDatasetSize, ImageSamplerUniform, ImageSamplerUniformFrankenstein, ImageSamplerDatasetSize, ValSampler, ImageValSampler
+from Sampler import MontageSamplerUniform, MontageSamplerUniformFrankenstein, MontageSamplerDatasetSize, ImageSamplerUniform, ImageSamplerUniformFrankenstein, ImageSamplerUniformFrankensteinV2, ImageSamplerDatasetSize, ValSampler, ImageValSampler
 
-def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank):
+def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank,inputChannels,normFile):
 
     # use the same transformations for train/val in this example
     trans = transforms.Compose([
@@ -23,12 +23,12 @@ def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBase
 
     if imageDir:
         # read in data
-        train_set = GetDataFolder("train", preName, augSeed, frank, pathDir=trainPathDir, transform=trans, ifAugment=ifAugment)
-        val_set = GetDataFolder("validation", preName, augSeed, frank, pathDir=valPathDir, transform=trans)
+        train_set = GetDataFolder("train", preName, augSeed, frank, inputChannels, normFile, pathDir=trainPathDir, transform=trans, ifAugment=ifAugment)
+        val_set = GetDataFolder("validation", preName, augSeed, frank, inputChannels, normFile, pathDir=valPathDir, transform=trans)
     else:
         # read in data
-        train_set = GetDataMontage("train", preName, augSeed, frank, pathDir=trainPathDir, transform=trans, ifAugment=ifAugment)
-        val_set = GetDataMontage("validation", preName, augSeed, frank, pathDir=valPathDir, transform=trans)
+        train_set = GetDataMontage("train", preName, augSeed, frank, normFile, pathDir=trainPathDir, transform=trans, ifAugment=ifAugment)
+        val_set = GetDataMontage("validation", preName, augSeed, frank, normFile, pathDir=valPathDir, transform=trans)
 
     image_datasets = {
         'train': train_set, 'val': val_set
@@ -37,7 +37,6 @@ def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBase
     sample_size_train = noTiles
     # it uses all val tiles
     batch_size = 2
-
     dataloaders = {}
 
     if imageDir:
@@ -45,7 +44,7 @@ def get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBase
         if ifSizeBased == 1:
             samplie_train = ImageSamplerDatasetSize(train_set, sample_size_train, 1024, 0)
         elif frank == 1:
-            samplie_train = ImageSamplerUniformFrankenstein(train_set, sample_size_train, 1024, 0)
+            samplie_train = ImageSamplerUniformFrankensteinV2(train_set, sample_size_train, 1024, 0)
         else:
             samplie_train = ImageSamplerUniform(train_set, sample_size_train, 1024, 0)
         samplie_val = ImageValSampler(val_set,  1024, 0)

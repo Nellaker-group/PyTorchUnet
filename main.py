@@ -23,7 +23,7 @@ import DataLoader
 import model
 
 
-from model import UNet, UNetnoDial
+from model import UNet
 from model import count_parameters
 from DataLoader import get_dataloader
 from training import train_model
@@ -69,22 +69,24 @@ def main():
     prs.add_argument('--weights', help='path to weights', type=str)
     prs.add_argument('--augment', help='whether to augment training', type=int, default=0)
     prs.add_argument('--optimiser', help='which optimiser to use, (cyclicLR=0, stepLR=1)', type=int, default=0)
-    prs.add_argument('--dilate', help='to use UNet with dilations or not', type=int, default=1)
     prs.add_argument('--stepSize', help='which step size to use for stepLR optimiser (--optimiser 1)', type=int, default=0)
     prs.add_argument('--torchSeed', help='seed for PyTorch so can control initialization  of weights', type=int, default=0)
     prs.add_argument('--frankenstein', help='assembles tiles from 4 different parts from different tiles (works for montages and uniform sampling across datasets)', type=int, default=0)
     prs.add_argument('--sizeBasedSamp', help='if sampling from datasets should depend on the size of the datasets (yes=1, no=0)', type=int, default=0)
     prs.add_argument('--LR', help='start learning rate', type=float)
+    prs.add_argument('--inputChannels', help='number of input channels - only works for values != 1 with --imageDir 1', type=int, default=1)
+    prs.add_argument('--outputChannels', help='number of output channels or classes to predict', type=int, default=2)
+    prs.add_argument('--normFile', help='file with mean and SD for normalisation (1st line mean, 2nd line SD)', type=str)
 
     args = vars(prs.parse_args())
     assert args['mode'] in ['train', 'predict']
     assert args['optimiser'] in [0,1]
     assert args['augment'] in [0,1]
-    assert args['dilate'] in [0,1]
     assert args['frankenstein'] in [0,1]
     assert (args['optimiser'] in [1] and args['gamma']>0) or (args['optimiser'] in [0] and args['gamma']==0)
     assert (args['optimiser'] in [1] and args['stepSize']>0) or (args['optimiser'] in [0] and args['stepSize']==0)
     assert args['sizeBasedSamp'] in [0,1]
+    assert args['inputChannels'] in [1] or (args['inputChannels'] in [3] and args['imageDir'] in [1])
 
     assert args['gpu'] in ['0','1','2','3']
     gpu=args['gpu']
@@ -96,6 +98,7 @@ def main():
 
     pathDir=args['pathDir']
     imageDir=args['imageDir']
+    normFile=args['normFile']
     assert imageDir == 0 or imageDir==1
     imageDir=bool(imageDir)
 
@@ -122,13 +125,14 @@ def main():
     device = select_gpu(gpu)
     print(device)
         
-    num_class = 1
+    num_class = args['outputChannels'] - 1
+    inputChannels = args['inputChannels']
 
     model = None
-    if args['dilate'] == 1:
-        model = UNet(n_class=num_class).to(device)
+    if inputChannels == 1:
+        model = UNet(n_class=num_class,n_input=inputChannels).to(device)
     else:
-        model = UNetnoDial(n_class=num_class).to(device)
+        model = UNet(n_class=num_class, n_input=inputChannels).to(device)
 
     print("weights are:")
     for param in model.parameters():
@@ -153,9 +157,8 @@ def main():
     augSeed = np.random.randint(0,100000)
     random.seed(augSeed)
 
-
     if(trainOrPredict == "train"):
-        training_data = get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank)
+        training_data = get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank,inputChannels,normFile)
 
         if whichOptim==0:
 

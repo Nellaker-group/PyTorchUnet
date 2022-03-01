@@ -335,6 +335,77 @@ class ImageSamplerUniformFrankenstein(Sampler):
         return len(self.data_source.input_images)
 
 
+class ImageSamplerUniformFrankensteinV2(Sampler):
+    """Samples 4 pieces of tile randomly from four images and stitches them together to one tile, with replacement.
+    Arguments:
+        data_source (Dataset): dataset to sample from
+    """
+
+    # so this has to have the data
+
+    def __init__(self, data_source, sample_size, shape, counter):
+
+        self.data_source = data_source
+        self.sample_size = sample_size
+        self.shape = shape
+        self.counter = counter
+
+    # this has to provide the iterator , the iterator will use the __getitem__ method
+    def __iter__(self):        
+
+        wdw_H, wdw_W = (1024,1024)
+        listie=[]
+        first = 1
+
+        for sample_idx in range(self.sample_size):
+
+            xs = []
+            ys = []
+            rand_var = []
+            # for getting them 4 parts            
+            whichData0 = np.random.randint(0,len(self.data_source.input_images))
+            whichImage0 = np.random.randint(0,len(self.data_source.input_images[whichData0]))
+            whichData2 = np.random.randint(0,len(self.data_source.input_images))
+            whichImage2 = np.random.randint(0,len(self.data_source.input_images[whichData2]))
+            whichData3 = np.random.randint(0,len(self.data_source.input_images))
+            whichImage3 = np.random.randint(0,len(self.data_source.input_images[whichData3]))
+            whichData4 = np.random.randint(0,len(self.data_source.input_images))
+            whichImage4 = np.random.randint(0,len(self.data_source.input_images[whichData4]))
+
+            h = np.random.randint(0,wdw_W)
+            w = np.random.randint(0,wdw_W)
+            w1 = np.random.randint(0,wdw_W)
+
+            tile0 = (h,w)
+            tile1 = (h,(wdw_W-w))
+            tile2 = ((wdw_W-h),w1)
+            tile3 = ((wdw_W-h),(wdw_W-w1))
+
+            # to slice and dice
+            x0, y0 = (1024,1024)
+            while(tile0[0] > (wdw_W-x0) or tile0[1] > (wdw_W-y0)):
+                x0, y0 = np.random.randint(0, wdw_W), np.random.randint(0, wdw_W)
+            x1, y1 = (1024,1024)
+            while(tile1[0] > (wdw_W-x1) or tile1[1] > (wdw_W-y1)):
+                x1, y1 = np.random.randint(0, wdw_W), np.random.randint(0, wdw_W)
+            x2, y2 = (1024,1024)
+            while(tile2[0] > (wdw_W-x2) or tile2[1] > (wdw_W-y2)):
+                x2, y2 = np.random.randint(0, wdw_W), np.random.randint(0, wdw_W)
+            x3, y3 = (1024,1024)
+            while(tile3[0] > (wdw_W-x3) or tile3[1] > (wdw_W-y3)):
+                x3, y3 = np.random.randint(0, wdw_W), np.random.randint(0, wdw_W)
+
+            whichDataTuple = (whichData0,whichData2,whichData3,whichData4)
+            whichImageAndCut = ((whichImage0,whichImage2,whichImage3,whichImage4),(x0,y0,x1,y1,x2,y2,x3,y3,h,w,w1)) 
+            listie.append((whichDataTuple,whichImageAndCut,first))
+            first = 0
+            self.counter += 1
+        return(iter(listie))
+
+    def __len__(self):
+        return len(self.data_source.input_images)
+
+
 class ImageSamplerDatasetSize(Sampler):
     """Samples tiles randomly from montages, but taking size of each montage into account, with replacement.
     Arguments:
