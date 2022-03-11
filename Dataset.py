@@ -13,9 +13,12 @@ from augment import augmenter, albumentationAugmenter
 
 # training is done with a montage
 class GetDataMontage(Dataset):
-    def __init__(self, whichData, preName, augSeed, frank, normFile, pathDir="", transform=None, ifAugment=0):
+    def __init__(self, whichData, preName, augSeed, frank, normFile, input512, pathDir="", transform=None, ifAugment=0):
         # define the size of the tiles to be working on
         shape = 1024
+        if input512 == 1:
+            shape = 512
+        assert shape in [512, 1024]
         assert whichData in ['train', 'validation']            
         files = os.listdir(pathDir)        
         mask_list = []        
@@ -23,12 +26,11 @@ class GetDataMontage(Dataset):
         self.whichData = whichData
         self.preName = preName
         files.sort()
-        self.meanIm=[]
-        self.stdIm=[]
         self.epochs=0
         self.ifAugment=ifAugment
         self.frank=frank
         self.augSeed=augSeed
+        self.shape=shape
                 
         for file in files:
             if "_mask.npy" in file:
@@ -36,8 +38,6 @@ class GetDataMontage(Dataset):
             print("file being read is:")
             print(file)
             im = np.load(pathDir + file)
-            self.meanIm.append(np.mean(im))
-            self.stdIm.append(np.std(im))
             newFile = file.replace(".npy","_mask.npy")
             #because empty spaces are 1 and adipocytes 0 originally
             mask = 1-np.load(pathDir + newFile)
@@ -60,7 +60,7 @@ class GetDataMontage(Dataset):
 
     def __getitem__(self, idx):
         data,x,y,first = idx
-        shape = 1024
+        shape = self.shape
 
         dataName = str(data)
 
@@ -122,13 +122,8 @@ class GetDataMontage(Dataset):
             #mask = mask.astype(np.float32, copy=False)
             image = image*255.0
 
-        # to pad with zeros
-        if(np.shape(image)<(1024,1024)):
-            image=np.pad(image, [(1024-crop)//2, (1024-crop)//2], mode='constant')
-            mask=np.pad(mask, [(1024-crop)//2, (1024-crop)//2], mode='constant')
-
-        assert np.shape(image) == (1024,1024)
-        assert np.shape(mask) == (1024,1024)
+        assert np.shape(image) == (1024,1024) or np.shape(image) == (512,512) 
+        assert np.shape(mask) == (1024,1024) or np.shape(image) == (512,512) 
 
         if choice > 0 and first == 1:
             # crops from first run
@@ -155,9 +150,12 @@ class GetDataMontage(Dataset):
 
 # training is done here
 class GetDataFolder(Dataset):
-    def __init__(self, whichData, preName, augSeed, frank, inputChannels, normFile, pathDir="", transform=None, ifAugment=0):
+    def __init__(self, whichData, preName, augSeed, frank, inputChannels, normFile, input512, pathDir="", transform=None, ifAugment=0):
         # define the size of the tiles to be working on
         shape = 1024
+        if input512 == 1:
+            shape = 512
+        assert shape in [512, 1024]
         # so far can only predict with images in a folder
         assert whichData in ['train','validation']            
         directories = os.listdir(pathDir)        
@@ -166,16 +164,13 @@ class GetDataFolder(Dataset):
         directories.sort()
         self.whichData = whichData
         self.preName = preName
-        self.meanIm=[]
-        self.stdIm=[]
         self.epochs=0
         self.ifAugment=ifAugment
         self.frank=frank
         self.augSeed=augSeed
         self.whichData = whichData
-        self.datasetMean=[]
-        self.datasetStd=[]
         self.inputChannels=inputChannels
+        self.shape=shape
 
         whichFolder = 0
 
@@ -212,15 +207,19 @@ class GetDataFolder(Dataset):
                 mask = mask.astype(np.float32)
                 if(np.shape(mask)>(1024,1024)):
                     mask = mask[0:1024,0:1024]
-                image_list[whichFolder].append(im)
-                mask_list[whichFolder].append(mask)
-                self.meanIm.append(np.mean(im))
-                self.stdIm.append(np.std(im))
+                if shape == 512:
+                    image_list[whichFolder].append(im[0:512,0:512])
+                    image_list[whichFolder].append(im[512:1024,0:512])
+                    image_list[whichFolder].append(im[0:512,512:1024])
+                    image_list[whichFolder].append(im[512:1024,512:1024])
+                    mask_list[whichFolder].append(mask[0:512,0:512])       
+                    mask_list[whichFolder].append(mask[512:1024,0:512])
+                    mask_list[whichFolder].append(mask[0:512,512:1024])
+                    mask_list[whichFolder].append(mask[512:1024,512:1024])
+                else:
+                    image_list[whichFolder].append(im)
+                    mask_list[whichFolder].append(mask)
             whichFolder += 1
-            self.datasetMean.append(np.mean(self.meanIm))
-            self.datasetStd.append(np.mean(self.stdIm))
-            self.meanIm=[]
-            self.stdIm=[]
 
         # should normalise with data from normFile
         f=open(normFile,"r")
@@ -246,7 +245,7 @@ class GetDataFolder(Dataset):
 
     def __getitem__(self, idx):
         data,i,first = idx
-        shape = 1024
+        shape = self.shape
 
         dataName = str(data)+"_"+str(i)
 
@@ -271,9 +270,9 @@ class GetDataFolder(Dataset):
 
             # upper left corner, upper right corner, lower left corner, lower right corner
             image1 = self.input_images[data[0]][indexes[0]][x0:(x0+h),y0:(y0+w)]
-            image2 = self.input_images[data[1]][indexes[1]][x1:(x1+h),y1:(y1+(1024-w))]
-            image3 = self.input_images[data[2]][indexes[2]][x2:(x2+(1024-h)),y2:(y2+w1)]
-            image4 = self.input_images[data[3]][indexes[3]][x3:(x3+(1024-h)),y3:(y3+(1024-w1))]
+            image2 = self.input_images[data[1]][indexes[1]][x1:(x1+h),y1:(y1+(shape-w))]
+            image3 = self.input_images[data[2]][indexes[2]][x2:(x2+(shape-h)),y2:(y2+w1)]
+            image4 = self.input_images[data[3]][indexes[3]][x3:(x3+(shape-h)),y3:(y3+(shape-w1))]
 
             # concat upper and lower parts (add columns together so has more columns now)
             imageCat = np.concatenate((image1,image2),axis=1)
@@ -283,9 +282,9 @@ class GetDataFolder(Dataset):
             
             # upper left corner, upper right corner, lower left corner, lower right corner
             mask1 = self.target_masks[data[0]][indexes[0]][x0:(x0+h),y0:(y0+w)]
-            mask2 = self.target_masks[data[1]][indexes[1]][x1:(x1+h),y1:(y1+(1024-w))]
-            mask3 = self.target_masks[data[2]][indexes[2]][x2:(x2+(1024-h)),y2:(y2+w1)]
-            mask4 = self.target_masks[data[3]][indexes[3]][x3:(x3+(1024-h)),y3:(y3+(1024-w1))]
+            mask2 = self.target_masks[data[1]][indexes[1]][x1:(x1+h),y1:(y1+(shape-w))]
+            mask3 = self.target_masks[data[2]][indexes[2]][x2:(x2+(shape-h)),y2:(y2+w1)]
+            mask4 = self.target_masks[data[3]][indexes[3]][x3:(x3+(shape-h)),y3:(y3+(shape-w1))]
             maskCat = np.concatenate((mask1,mask2),axis=1)
             maskCat2 = np.concatenate((mask3,mask4),axis=1)
             mask = np.concatenate((maskCat,maskCat2),axis=0)
@@ -327,19 +326,14 @@ class GetDataFolder(Dataset):
             #mask = mask.astype(np.float32, copy=False)
             image = image*255.0
 
-        # to pad with zeros
-        if(np.shape(image)<(1024,1024)):
-            image=np.pad(image, [(1024-crop)//2, (1024-crop)//2], mode='constant')
-            mask=np.pad(mask, [(1024-crop)//2, (1024-crop)//2], mode='constant')
-
         if self.inputChannels == 3:
             #this makes the image being print correctly
             image = image/255.0
-            assert np.shape(image) == (1024,1024,3)
-            assert np.shape(mask) == (1024,1024)
+            assert np.shape(image) == (1024,1024,3) or np.shape(image) == (512,512,3)
+            assert np.shape(mask) == (1024,1024) or np.shape(mask) == (512,512)
         else:
-            assert np.shape(image) == (1024,1024)
-            assert np.shape(mask) == (1024,1024)
+            assert np.shape(image) == (1024,1024) or np.shape(image) == (512,512)
+            assert np.shape(mask) == (1024,1024) or np.shape(mask) == (512,512)
 
         if choice > 0 and first == 1:
             # crops from first run

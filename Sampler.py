@@ -21,7 +21,7 @@ class MontageSamplerUniform(Sampler):
     # this has to provide the iterator , the iterator will use the __getitem__ method
     def __iter__(self):        
 
-        wdw_H, wdw_W = (1024,1024)
+        wdw_H, wdw_W = (self.shape,self.shape)
         listie=[]
         first = 1
 
@@ -63,7 +63,7 @@ class MontageSamplerUniformFrankenstein(Sampler):
     # this has to provide the iterator , the iterator will use the __getitem__ method
     def __iter__(self):        
 
-        wdw_H, wdw_W = (1024,1024)
+        wdw_H, wdw_W = (self.shape,self.shape)
         listie=[]
         first = 1
 
@@ -109,13 +109,13 @@ class MontageSamplerDatasetSize(Sampler):
     # this has to provide the iterator , the iterator will use the __getitem__ method
     def __iter__(self):        
 
-        wdw_H, wdw_W = (1024,1024)
+        wdw_H, wdw_W = (self.shape,self.shape)
 
         index = 0
         tiles = []
         for e in self.data_source.input_images:
             H, W=self.data_source.input_images[index].shape
-            tiles.append(math.floor(H//1024)*math.floor(W//1024))
+            tiles.append(math.floor(H//wdw_W)*math.floor(W//wdw_W))
             index += 1
             
         tilesAll = tiles.sum()
@@ -168,7 +168,7 @@ class SeqSamplerUniform(Sampler):
 
     def __iter__(self):        
 
-        wdw_H, wdw_W = (1024,1024)
+        wdw_H, wdw_W = (self.shape,self.shape)
 
         first = 1 
         listie=[]
@@ -182,7 +182,7 @@ class SeqSamplerUniform(Sampler):
             # to make sure we do not get np.random.randint(0, 0) which gives an error 
             rangeH=max(H - wdw_H,1)
             rangeW=max(W - wdw_W,1)
-            x0, y0 = np.random.choice(list(range(0, (rangeH+1), 1024))), np.random.choice(list(range(0, (rangeW+1), 1024)))
+            x0, y0 = np.random.choice(list(range(0, (rangeH+1), wdw_W))), np.random.choice(list(range(0, (rangeW+1), wdw_W)))
             index = rand_var
             listie.append((index,x0,y0,first))
             first = 0
@@ -213,13 +213,13 @@ class SeqSamplerDatasetSize(Sampler):
 
     def __iter__(self):        
 
-        wdw_H, wdw_W = (1024,1024)
+        wdw_H, wdw_W = (self.shape,self.shape)
 
         index = 0
         tiles = []
         for e in self.data_source.input_images:
             H, W=self.data_source.input_images[index].shape
-            tiles.append(math.floor(H//1024)*math.floor(W//1024))
+            tiles.append(math.floor(H//wdw_W)*math.floor(W//wdw_W))
             index += 1
 
         tilesAll = tiles.sum()
@@ -236,10 +236,10 @@ class SeqSamplerDatasetSize(Sampler):
             rangeW=max(W - wdw_W,1) 
             for i in range(len(tiles)):
                 if i == 0 and rand_var < tiles[i]:
-                    x0, y0 = np.random.choice(list(range(0, (rangeH+1), 1024))), np.random.choice(list(range(0, (rangeW+1), 1024)))
+                    x0, y0 = np.random.choice(list(range(0, (rangeH+1), wdw_W))), np.random.choice(list(range(0, (rangeW+1), wdw_W)))
                     whichDataset = i
                 elif rand_var >= tiles[i-1] and rand_var < tiles[i]:
-                    x0, y0 = np.random.choice(list(range(0, (rangeH+1), 1024))), np.random.choice(list(range(0, (rangeW+1), 1024)))
+                    x0, y0 = np.random.choice(list(range(0, (rangeH+1), wdw_W))), np.random.choice(list(range(0, (rangeW+1), wdw_W)))
                     whichDataset = i
             assert whichDataset >= 0
             listie.append((whichDataset,x0,y0,first))
@@ -269,7 +269,7 @@ class ImageSamplerUniform(Sampler):
     # this has to provide the iterator , the iterator will use the __getitem__ method
     def __iter__(self):        
 
-        wdw_H, wdw_W = (1024,1024)
+        wdw_H, wdw_W = (self.shape,self.shape)
         listie=[]
         first = 1
 
@@ -304,7 +304,7 @@ class ImageSamplerUniformFrankenstein(Sampler):
     # this has to provide the iterator , the iterator will use the __getitem__ method
     def __iter__(self):        
 
-        wdw_H, wdw_W = (1024,1024)
+        wdw_H, wdw_W = (self.shape,self.shape)
         listie=[]
         first = 1
 
@@ -353,7 +353,7 @@ class ImageSamplerUniformFrankensteinV2(Sampler):
     # this has to provide the iterator , the iterator will use the __getitem__ method
     def __iter__(self):        
 
-        wdw_H, wdw_W = (1024,1024)
+        wdw_H, wdw_W = (self.shape,self.shape)
         listie=[]
         first = 1
 
@@ -382,16 +382,16 @@ class ImageSamplerUniformFrankensteinV2(Sampler):
             tile3 = ((wdw_W-h),(wdw_W-w1))
 
             # to slice and dice
-            x0, y0 = (1024,1024)
+            x0, y0 = (wdw_H,wdw_W)
             while(tile0[0] > (wdw_W-x0) or tile0[1] > (wdw_W-y0)):
                 x0, y0 = np.random.randint(0, wdw_W), np.random.randint(0, wdw_W)
-            x1, y1 = (1024,1024)
+            x1, y1 = (wdw_H,wdw_W)
             while(tile1[0] > (wdw_W-x1) or tile1[1] > (wdw_W-y1)):
                 x1, y1 = np.random.randint(0, wdw_W), np.random.randint(0, wdw_W)
-            x2, y2 = (1024,1024)
+            x2, y2 = (wdw_H,wdw_W)
             while(tile2[0] > (wdw_W-x2) or tile2[1] > (wdw_W-y2)):
                 x2, y2 = np.random.randint(0, wdw_W), np.random.randint(0, wdw_W)
-            x3, y3 = (1024,1024)
+            x3, y3 = (wdw_H,wdw_W)
             while(tile3[0] > (wdw_W-x3) or tile3[1] > (wdw_W-y3)):
                 x3, y3 = np.random.randint(0, wdw_W), np.random.randint(0, wdw_W)
 
@@ -422,7 +422,7 @@ class ImageSamplerDatasetSize(Sampler):
     # this has to provide the iterator , the iterator will use the __getitem__ method
     def __iter__(self):        
 
-        wdw_H, wdw_W = (1024,1024)
+        wdw_H, wdw_W = (self.shape,self.shape)
 
         index = 0
         tiles = []
@@ -475,12 +475,12 @@ class ValSampler(Sampler):
 
     def __iter__(self):        
 
-        wdw_H, wdw_W = (1024,1024)
+        wdw_H, wdw_W = (self.shape,self.shape)
 
         tiles = []
         for index in range(len(self.data_source.input_images)):
             H, W=self.data_source.input_images[index].shape
-            tiles.append(math.floor(H//1024)*math.floor(W//1024))
+            tiles.append(math.floor(H//wdw_H)*math.floor(W//wdw_W))
 
         first = 1 
         listie=[]
@@ -492,8 +492,8 @@ class ValSampler(Sampler):
             # to make sure we do not get np.random.randint(0, 0) which gives an error
             rangeH=max(H - wdw_H+1,1)
             rangeW=max(W - wdw_W+1,1)
-            for x in range(0, rangeH, 1024):
-                for y in range(0, rangeW, 1024):
+            for x in range(0, rangeH, wdw_H):
+                for y in range(0, rangeW, wdw_W):
                     listie.append((i,x,y,first))
                     first = 0
                     counter[i] += 1

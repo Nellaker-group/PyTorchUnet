@@ -77,6 +77,7 @@ def main():
     prs.add_argument('--inputChannels', help='number of input channels - only works for values != 1 with --imageDir 1', type=int, default=1)
     prs.add_argument('--outputChannels', help='number of output channels or classes to predict', type=int, default=2)
     prs.add_argument('--normFile', help='file with mean and SD for normalisation (1st line mean, 2nd line SD)', type=str)
+    prs.add_argument('--512', help='image size is 512, cuts existing 1024x1024 tiles into 4 bits', type=int, default=0)
 
     args = vars(prs.parse_args())
     assert args['mode'] in ['train', 'predict']
@@ -87,6 +88,7 @@ def main():
     assert (args['optimiser'] in [1] and args['stepSize']>0) or (args['optimiser'] in [0] and args['stepSize']==0)
     assert args['sizeBasedSamp'] in [0,1]
     assert args['inputChannels'] in [1] or (args['inputChannels'] in [3] and args['imageDir'] in [1])
+    assert args['512'] in [0,1]
 
     assert args['gpu'] in ['0','1','2','3']
     gpu=args['gpu']
@@ -110,6 +112,11 @@ def main():
     ifSizeBased=args['sizeBasedSamp']
     learningRate=args['LR']
     frank=args['frankenstein']
+    input512=args['512']
+    
+    inputSize = 1024
+    if input512 == 1:
+        inputSize = 512
 
     if args['torchSeed']>0:
         torch.manual_seed(args['torchSeed'])
@@ -152,13 +159,13 @@ def main():
     else:
         randOrSeq = "Random"
 
-    preName = randOrSeq+"Tiles_ep"+str(noEpochs)+"t"+date+"g"+str(gamma)+"s"+str(seed)+"au"+str(ifAugment)+"op"+str(whichOptim)+"st"+str(stepSize)+"sB"+str(ifSizeBased)+"LR"+str(learningRate)+"fr"+str(frank)
+    preName = randOrSeq+"Tiles_ep"+str(noEpochs)+"t"+date+"g"+str(gamma)+"s"+str(seed)+"au"+str(ifAugment)+"op"+str(whichOptim)+"st"+str(stepSize)+"sB"+str(ifSizeBased)+"LR"+str(learningRate)+"fr"+str(frank)+"ch"+str(inputChannels)+"si"+str(inputSize)
     # for the sampling of the augmentation
     augSeed = np.random.randint(0,100000)
     random.seed(augSeed)
 
     if(trainOrPredict == "train"):
-        training_data = get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank,inputChannels,normFile)
+        training_data = get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank,inputChannels,normFile,input512)
 
         if whichOptim==0:
 
@@ -182,7 +189,7 @@ def main():
             torch.save(model.state_dict(),"weights/weights"+preName+".dat")
         f.close()
     else:
-        predictWeights= sys.argv[8] 
+        predictWeights=args['weights']
         preName = predictWeights.replace("weights/weights","")
         preName = preName.replace(".dat","")
         # load image
