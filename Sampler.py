@@ -335,6 +335,54 @@ class ImageSamplerUniformFrankenstein(Sampler):
         return len(self.data_source.input_images)
 
 
+
+class ImageSamplerUniformFrankensteinEmil(Sampler):
+    """Samples 4 pieces of tile randomly from four images from the same dataset and stitches them together to one tile, with replacement.
+    Arguments:
+        data_source (Dataset): dataset to sample from
+    """
+
+    # so this has to have the data
+
+    def __init__(self, data_source, sample_size, shape, counter):
+
+        self.data_source = data_source
+        self.sample_size = sample_size
+        self.shape = shape
+        self.counter = counter
+
+    # this has to provide the iterator , the iterator will use the __getitem__ method
+    def __iter__(self):        
+
+        wdw_H, wdw_W = (self.shape,self.shape)
+        listie=[]
+        first = 1
+
+        for sample_idx in range(self.sample_size):
+
+            xs = []
+            ys = []
+            rand_var = []
+            # for getting them 4 parts            
+            whichDataset = np.random.randint(0,len(self.data_source.input_images))
+            whichImage = np.random.randint(0,len(self.data_source.input_images[whichDataset]))
+            whichImage2 = np.random.randint(0,len(self.data_source.input_images[whichDataset]))
+            whichImage3 = np.random.randint(0,len(self.data_source.input_images[whichDataset]))
+            whichImage4 = np.random.randint(0,len(self.data_source.input_images[whichDataset]))
+            # to slice and dice
+            cutx, cuty = np.random.randint(0, wdw_W), np.random.randint(0, wdw_W)
+            whichDataTuple = (whichDataset,whichDataset,whichDataset,whichDataset)
+            whichImageAndCut = ((whichImage,whichImage2,whichImage3,whichImage4),(cutx,cuty)) 
+            listie.append((whichDataTuple,whichImageAndCut,first))
+            first = 0
+            self.counter += 1
+        return(iter(listie))
+
+    def __len__(self):
+        return len(self.data_source.input_images)
+
+
+
 class ImageSamplerUniformFrankensteinV2(Sampler):
     """Samples 4 pieces of tile randomly from four images and stitches them together to one tile, with replacement.
     Arguments:

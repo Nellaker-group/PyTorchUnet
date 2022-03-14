@@ -22,7 +22,6 @@ import training
 import DataLoader
 import model
 
-
 from model import UNet
 from model import count_parameters
 from DataLoader import get_dataloader
@@ -62,8 +61,9 @@ def main():
     prs.add_argument('--mode', help='train or predict', type=str)
     prs.add_argument('--tiles', help='how many tiles to use for training', type=int, default=200)
     prs.add_argument('--seed', help='seed to use', type=int)
-    prs.add_argument('--pathDir', help='path of directory for data', type=str)
-    prs.add_argument('--imageDir', help='if directory with images', type=int)
+    prs.add_argument('--trainDir', help='path of directory for training data', type=str)
+    prs.add_argument('--valDir', help='path of directory for validation data', type=str)
+    prs.add_argument('--imageDir', help='if training data is directory with images', type=int)
     prs.add_argument('--epochs', help='number of epochs', type=int)
     prs.add_argument('--gamma', help='number of epochs', type=float, default=0)
     prs.add_argument('--weights', help='path to weights', type=str)
@@ -71,7 +71,7 @@ def main():
     prs.add_argument('--optimiser', help='which optimiser to use, (cyclicLR=0, stepLR=1)', type=int, default=0)
     prs.add_argument('--stepSize', help='which step size to use for stepLR optimiser (--optimiser 1)', type=int, default=0)
     prs.add_argument('--torchSeed', help='seed for PyTorch so can control initialization  of weights', type=int, default=0)
-    prs.add_argument('--frankenstein', help='assembles tiles from 4 different parts from different tiles (works for montages and uniform sampling across datasets)', type=int, default=0)
+    prs.add_argument('--frankenstein', help='assembles tiles from 4 different parts from different tiles (works for montages and uniform sampling across datasets)\n 1=Cuts 4 random parts from tiles and merges them together\n 2=Cuts 4 corners from tiles from the same dataset and merges them together', type=int, default=0)
     prs.add_argument('--sizeBasedSamp', help='if sampling from datasets should depend on the size of the datasets (yes=1, no=0)', type=int, default=0)
     prs.add_argument('--LR', help='start learning rate', type=float)
     prs.add_argument('--inputChannels', help='number of input channels - only works for values != 1 with --imageDir 1', type=int, default=1)
@@ -83,7 +83,7 @@ def main():
     assert args['mode'] in ['train', 'predict']
     assert args['optimiser'] in [0,1]
     assert args['augment'] in [0,1]
-    assert args['frankenstein'] in [0,1]
+    assert args['frankenstein'] in [0,1,2]
     assert (args['optimiser'] in [1] and args['gamma']>0) or (args['optimiser'] in [0] and args['gamma']==0)
     assert (args['optimiser'] in [1] and args['stepSize']>0) or (args['optimiser'] in [0] and args['stepSize']==0)
     assert args['sizeBasedSamp'] in [0,1]
@@ -98,7 +98,8 @@ def main():
     np.random.seed(seed)
     noTiles=args['tiles']
 
-    pathDir=args['pathDir']
+    trainDir=args['trainDir']
+    valDir=args['valDir']
     imageDir=args['imageDir']
     normFile=args['normFile']
     assert imageDir == 0 or imageDir==1
@@ -165,7 +166,7 @@ def main():
     random.seed(augSeed)
 
     if(trainOrPredict == "train"):
-        training_data = get_dataloader(pathDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank,inputChannels,normFile,input512)
+        training_data = get_dataloader(trainDir, valDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank,inputChannels,normFile,input512)
 
         if whichOptim==0:
 

@@ -17,7 +17,7 @@ def gkern(l=5, sig=1.):
     return kernel / np.sum(kernel)
 
 # for applying kernel to numpy array - CHECK IF INDEED WORKING
-# from https://stackoverflow.com/questions/29920114/how-to-gauss-filter-blur-a-floating-point-numpy-array
+# from https://stackoverflow.com/questions/29920114/how-to-gauss-filter-blur-a-floating-point-numpy-array    
 def blur(a,filter="boxlur"):
     assert filter in ["boxblur","gaussblur","edge"]
     if filter == "boxblur":
@@ -39,7 +39,7 @@ def blur(a,filter="boxlur"):
     arraylist = np.array(arraylist)
     arraylist_sum = np.sum(arraylist, axis=0)
     return arraylist_sum
-    
+
 # I have to add .copy() to make it work with transforming it to a tensor
 # see this for more:
 # https://stackoverflow.com/questions/20843544/np-rot90-corrupts-an-opencv-image

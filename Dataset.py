@@ -291,6 +291,41 @@ class GetDataFolder(Dataset):
 
             dataName = dataName.replace("[","").replace("]","").replace("(","").replace(")","").replace(", ","-")
 
+        if self.whichData=="train" and self.frank == 2:
+
+            dataName = str(data)+"_"+str(i[0])
+            
+            indexes = i[0]
+            cuts = i[1]
+
+            # unpacking coordinate lists (xlist and ylist) and where to cut x and y (cutx and cuty)
+            cutx=cuts[0]
+            cuty=cuts[1]
+            
+            # upper left corner, upper right corner, lower left corner, lower right corner
+            image1 = self.input_images[data[0]][indexes[0]][0:cutx,0:cuty] 
+            image2 = self.input_images[data[1]][indexes[1]][0:cutx,cuty:shape] 
+            image3 = self.input_images[data[2]][indexes[2]][cutx:shape,0:cuty] 
+            image4 = self.input_images[data[3]][indexes[3]][cutx:shape,cuty:shape] 
+
+            # concat upper and lower parts (add columns together so has more columns now)
+            imageCat = np.concatenate((image1,image2),axis=1)
+            imageCat2 = np.concatenate((image3,image4),axis=1)
+            # concat upper and lower part (add rows together so has more rows now)
+            image = np.concatenate((imageCat,imageCat2),axis=0)
+            
+            # upper left corner, upper right corner, lower left corner, lower right corner
+            mask1 = self.target_masks[data[0]][indexes[0]][0:cutx,0:cuty] 
+            mask2 = self.target_masks[data[1]][indexes[1]][0:cutx,cuty:shape] 
+            mask3 = self.target_masks[data[2]][indexes[2]][cutx:shape,0:cuty] 
+            mask4 = self.target_masks[data[3]][indexes[3]][cutx:shape,cuty:shape] 
+
+            maskCat = np.concatenate((mask1,mask2),axis=1)
+            maskCat2 = np.concatenate((mask3,mask4),axis=1)
+            mask = np.concatenate((maskCat,maskCat2),axis=0)
+
+            dataName = dataName.replace("[","").replace("]","").replace("(","").replace(")","").replace(", ","-")
+
         else:
             image = self.input_images[data][i] 
             mask = self.target_masks[data][i] 
