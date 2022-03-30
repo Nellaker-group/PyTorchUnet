@@ -291,7 +291,7 @@ class GetDataFolder(Dataset):
 
             dataName = dataName.replace("[","").replace("]","").replace("(","").replace(")","").replace(", ","-")
 
-        if self.whichData=="train" and self.frank == 2:
+        elif self.whichData=="train" and self.frank == 2:
 
             dataName = str(data)+"_"+str(i[0])
             
