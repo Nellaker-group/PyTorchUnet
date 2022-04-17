@@ -18,9 +18,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import random
 
-from Dataset import GetDataMontage, GetDataFolder
+from Dataset import GetDataMontage, GetDataFolder, GetDataSeqTilesFolderPred
 
-def predict(model, pathDir, imageDir, device, preName):
+def predict(model, preDir, imageDir, device, preName, normFile, inputChannels):
 
     print("DO I PREDICT!?")
 
@@ -31,9 +31,9 @@ def predict(model, pathDir, imageDir, device, preName):
         #transforms.Normalize([0.5], [0.5])
     ])
 
-    sample_size_pred = len(os.listdir(pathDir))
+    sample_size_pred = len(os.listdir(preDir))
 
-    pred_set = GetDataSeqTilesFolder("predict", preName, pathDir=pathDir, transform=trans)
+    pred_set = GetDataSeqTilesFolderPred("predict", preName, normFile, inputChannels, pathDir=preDir, transform=trans)
     
     batch_size = 2
 
@@ -43,7 +43,7 @@ def predict(model, pathDir, imageDir, device, preName):
     
     filesWritten=0
 
-    files = os.listdir(pathDir)
+    files = os.listdir(preDir)
     files = [s for s in files if not "_mask.png" in s]
     files.sort()
 
@@ -66,8 +66,12 @@ def predict(model, pathDir, imageDir, device, preName):
         newPred[newPred <= 0.5] = 0
         # newPred[newPred > 0.9] = 255
         # newPred[newPred <= 0.9] = 0
-        plt.imsave(pathDir+newFile, newPred)
+        plt.imsave(preDir+newFile, newPred)
         filesWritten+=1
+
+        # check that there files left to be predicted on, since we have batch of two
+        if((filesWritten+1)>len(files)):
+           break
 
         # second element of the batch
         newFile = files[filesWritten].replace(".png","_mask.png")
@@ -78,7 +82,7 @@ def predict(model, pathDir, imageDir, device, preName):
         newPred[newPred <= 0.5] = 0
         # newPred[newPred > 0.9] = 255
         # newPred[newPred <= 0.9] = 0
-        plt.imsave(pathDir+newFile, newPred)
+        plt.imsave(preDir+newFile, newPred)
         filesWritten+=1
 
     return pred

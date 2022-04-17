@@ -405,7 +405,7 @@ class GetDataFolder(Dataset):
 
 # prediction is done on files in a folder
 class GetDataSeqTilesFolderPred(Dataset):
-    def __init__(self, whichData, preName, pathDir="", transform=None):
+    def __init__(self, whichData, preName, normFile, inputChannels, pathDir="", transform=None):
 
         # define the size of the tiles to be working on
         shape = 1024
@@ -420,7 +420,9 @@ class GetDataSeqTilesFolderPred(Dataset):
         self.whichData = whichData
         self.counter=0
 
-        f=open("weights/norm"+preName+".norm","r")
+        print("There are this many files being read for prediction "+str(len(files)))
+
+        f=open(normFile,"r")
         self.totalMean = float(f.readline())
         self.totalStd = float(f.readline())
         f.close()
@@ -430,12 +432,22 @@ class GetDataSeqTilesFolderPred(Dataset):
                 continue
             print("file being read:")
             print(file)
-            im = cv2.imread(pathDir + file, cv2.IMREAD_GRAYSCALE)
-            im2 = np.reshape(im,(shape,shape,1))
+            if inputChannels == 1:
+                im = cv2.imread(pathDir + "/" + file, cv2.IMREAD_GRAYSCALE)
+                assert np.shape(im) != ()
+                im = im.astype(np.float32)
+                if(np.shape(im)>(1024,1024)):
+                    im = im[0:1024,0:1024]
+            else:
+                im = cv2.imread(pathDir + "/" + file)
+                assert np.shape(im) != ()
+                im = im.astype(np.float32)
+                if(np.shape(im)>(1024,1024,3)):
+                    im = im[0:1024,0:1024,0:3]
             normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
             mask = np.zeros((shape,shape))                      
             mask_list.append(mask)
-            image_list.append(normalize(im2))
+            image_list.append(normalize(im))
             
         self.input_images = image_list
         self.target_masks = mask_list

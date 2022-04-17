@@ -63,6 +63,7 @@ def main():
     prs.add_argument('--seed', help='seed to use', type=int)
     prs.add_argument('--trainDir', help='path of directory for training data', type=str)
     prs.add_argument('--valDir', help='path of directory for validation data', type=str)
+    prs.add_argument('--preDir', help='path of directory for predictions', type=str)
     prs.add_argument('--imageDir', help='if training data is directory with images', type=int)
     prs.add_argument('--epochs', help='number of epochs', type=int)
     prs.add_argument('--gamma', help='number of epochs', type=float, default=0)
@@ -100,6 +101,7 @@ def main():
 
     trainDir=args['trainDir']
     valDir=args['valDir']
+    preDir=args['preDir']
     imageDir=args['imageDir']
     normFile=args['normFile']
     assert imageDir == 0 or imageDir==1
@@ -196,7 +198,7 @@ def main():
         # load image
         model.load_state_dict(torch.load(predictWeights))
         model.eval()
-        results = predict(model,pathDir,imageDir,device,preName)
+        results = predict(model,preDir,imageDir,device,preName, normFile, inputChannels)
 
 if __name__ == "__main__":
     main()
