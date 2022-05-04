@@ -10,6 +10,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import json
 from augment import augmenter, albumentationAugmenter
+from magnifier import magnify
 
 # training is done with a montage
 class GetDataMontage(Dataset):
@@ -112,14 +113,9 @@ class GetDataMontage(Dataset):
         # only augments training images - does 50 % of the time - rotates, flips, blur or noise
         if self.whichData=="train" and self.ifAugment:
             #emil convert to uint8 instead of float32 - might cause issues
-            #image = image.astype(np.uint8, copy=False)
-            #mask = mask.astype(np.uint8, copy=False)
             #because gaussNoise and RandomBrightness only made for floats between 0 and 1
             image = image/255.0
             image,mask,replay,choice,crop = albumentationAugmenter(image,mask,self.epochs)
-            #and convert it back to float32 - because rest of pipeline built for that
-            #image = image.astype(np.float32, copy=False)
-            #mask = mask.astype(np.float32, copy=False)
             image = image*255.0
 
         assert np.shape(image) == (1024,1024) or np.shape(image) == (512,512) 
@@ -150,7 +146,7 @@ class GetDataMontage(Dataset):
 
 # training is done here
 class GetDataFolder(Dataset):
-    def __init__(self, whichData, preName, augSeed, frank, inputChannels, normFile, input512, pathDir="", transform=None, ifAugment=0):
+    def __init__(self, whichData, preName, augSeed, frank, inputChannels, normFile, input512, zoomFile, pathDir="", transform=None, ifAugment=0):
         # define the size of the tiles to be working on
         shape = 1024
         if input512 == 1:
@@ -171,6 +167,25 @@ class GetDataFolder(Dataset):
         self.whichData = whichData
         self.inputChannels=inputChannels
         self.shape=shape
+
+        zoomDict = None
+        refData = ""
+        if(zoomFile!=""):
+            zoomDict = {}
+            with open(zoomFile,"r") as zf:
+                firstLine = 1
+                for line in zf:
+                    if(firstLine==1):
+                        d0, z0, m0 = tuple(line.split(" "))
+                        m0 = m0.strip()
+                        assert m0 == "reference"
+                        firstLine=0
+                        refData = d0
+                        zoomDict[d0] = float(z0)
+                    else:
+                        d0, z0 = tuple(line.split(" "))
+                        zoomDict[d0] = float(z0)                
+            zf.close()
 
         whichFolder = 0
 
@@ -199,7 +214,7 @@ class GetDataFolder(Dataset):
                 assert np.shape(mask) != ()
                 assert np.max(mask) == 255
                 assert np.min(mask) == 0
-                # because this is not a binary mask for some reason - converting it into a binary mask
+                # because this is not a binary mask when stored as a .jpg - converting it into a binary mask
                 middlePoint = (np.max(mask)+np.min(mask))/2
                 maskCopy = np.copy(mask)
                 mask[ maskCopy < middlePoint ]=1
@@ -207,6 +222,9 @@ class GetDataFolder(Dataset):
                 mask = mask.astype(np.float32)
                 if(np.shape(mask)>(1024,1024)):
                     mask = mask[0:1024,0:1024]
+                if(zoomFile!=""):
+                    im = magnify(im,zoomDict[directory],zoomDict[refData],0,inputChannels,0)
+                    mask = magnify(mask,zoomDict[directory],zoomDict[refData],0,inputChannels,1)
                 if shape == 512:
                     image_list[whichFolder].append(im[0:512,0:512])
                     image_list[whichFolder].append(im[512:1024,0:512])
@@ -351,14 +369,9 @@ class GetDataFolder(Dataset):
         # only augments training images - does 50 % of the time - rotates, flips, blur or noise
         if self.whichData=="train" and self.ifAugment:
             #emil convert to uint8 instead of float32 - might cause issues
-            #image = image.astype(np.uint8, copy=False)
-            #mask = mask.astype(np.uint8, copy=False)
             #because gaussNoise and RandomBrightness only made for floats between 0 and 1
             image = image/255.0
             image,mask,replay,choice,crop = albumentationAugmenter(image,mask,self.epochs)
-            #and convert it back to float32 - because rest of pipeline built for that
-            #image = image.astype(np.float32, copy=False)
-            #mask = mask.astype(np.float32, copy=False)
             image = image*255.0
 
         if self.inputChannels == 3:
@@ -405,7 +418,7 @@ class GetDataFolder(Dataset):
 
 # prediction is done on files in a folder
 class GetDataSeqTilesFolderPred(Dataset):
-    def __init__(self, whichData, preName, normFile, inputChannels, pathDir="", transform=None):
+    def __init__(self, whichData, preName, normFile, inputChannels, zoomFile, whichDataset, pathDir="", transform=None):
 
         # define the size of the tiles to be working on
         shape = 1024
@@ -427,6 +440,36 @@ class GetDataSeqTilesFolderPred(Dataset):
         self.totalStd = float(f.readline())
         f.close()
 
+        datasetFound = 0
+        zoomDict = None
+        refData = ""
+        if(zoomFile!=""):
+            zoomDict = {}
+            with open(zoomFile,"r") as zf:
+                firstLine = 1
+                for line in zf:
+                    if(firstLine==1):
+                        d0, z0, m0 = tuple(line.split(" "))
+                        m0 = m0.strip()
+                        print(d0)
+                        print(z0)
+                        print(m0)
+                        assert m0 == "reference"
+                        firstLine=0
+                        refData = d0
+                        if(whichDataset==d0):
+                            datasetFound = 1
+                        zoomDict[d0] = float(z0)
+                    else:
+                        d0, z0 = tuple(line.split(" "))
+                        if(whichDataset==d0):
+                            datasetFound = 1
+                        zoomDict[d0] = float(z0)
+            zf.close()
+
+        ## the dataset denoted as the target dataset has to be in the zoomFile
+        if(zoomFile!=""):
+            assert datasetFound == 1
         for file in files:
             if "_mask.png" in file:
                 continue
@@ -444,11 +487,13 @@ class GetDataSeqTilesFolderPred(Dataset):
                 im = im.astype(np.float32)
                 if(np.shape(im)>(1024,1024,3)):
                     im = im[0:1024,0:1024,0:3]
+            if(zoomFile!=""):
+                im = magnify(im,zoomDict[whichDataset],zoomDict[refData],0,inputChannels,0)
             normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
             mask = np.zeros((shape,shape))                      
             mask_list.append(mask)
             image_list.append(normalize(im))
-            
+
         self.input_images = image_list
         self.target_masks = mask_list
         self.transform = transform      

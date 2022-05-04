@@ -14,7 +14,7 @@ import re,glob
 import cv2
 import sys
 import os
-
+from PIL import Image
 
 ## index, 0 will give you the python filename being executed. Any index after that are the arguments passed.
 fileName= sys.argv[1] 
@@ -25,6 +25,7 @@ sizesx= sys.argv[4]
 sizesy= sys.argv[5] 
 targetDir= sys.argv[6] 
 if512= sys.argv[7] 
+ifScaleSCN= sys.argv[8] 
 
 print(fileName)
 
@@ -38,10 +39,17 @@ shape=1024
 if(int(if512)==1):
     shape=512
 
+print(ifScaleSCN)
+
+if(int(ifScaleSCN)==1 and shape==1024):
+    ## pixel to micrometer GTEX (0.4942) and ENDOX (0.2500)
+    shape = int(1024.0 / ((0.4942/0.2500)))
 
 for x in range(0, int(sizesx), shape):
     for y in range(0, int(sizesy), shape):
         im=slide.read_region((x+int(boundsx),y+int(boundsy)),0,(shape,shape))
+        if(int(ifScaleSCN)==1):
+            im=im.resize((1024,1024))
         fileName2=os.path.basename(fileName)
         fileName2=fileName2.replace(" ","_")
         fileName2=fileName2.replace(".scn","_X"+str(x)+"_Y"+str(y)+".png")

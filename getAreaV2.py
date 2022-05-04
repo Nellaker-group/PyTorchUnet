@@ -14,7 +14,6 @@ args = vars(prs.parse_args())
 assert args['inputDir'][-1] != "/"
 assert args['dataset'] in ['GTEX', 'ENDOX', 'MOBB', 'fatDIVA']
 
-
 def predict_areas(input_img,dataset):
     # counts and labels objects or seperate segmentation blobs                                                                                                      
     labels, no_objects = ndimage.label(input_img)
@@ -63,3 +62,11 @@ print(np.nanmean(df['mu_area']))
 print("mean sd is:")
 print(np.mean(df['sd_area']))
 print(np.nanmean(df['sd_area']))
+
+print("mean number of cells is:")
+print(np.mean(df['no_cells']))
+print(np.nanmean(df['no_cells']))
+
+print("mean number of cells is (with tiles with cells > 0):")
+print(np.mean(df[ df['no_cells']>0]['no_cells']))
+print(np.nanmean(df[ df['no_cells']>0]['no_cells']))

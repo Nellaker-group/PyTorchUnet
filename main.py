@@ -29,21 +29,26 @@ from training import train_model
 from prediction import predict
 
 def select_gpu(whichGPU):
-
+    
+    gpu=""
     if(whichGPU=="0"):
         print("here0")
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        gpu="cuda:0"
     elif(whichGPU=="1"):
         print("here1")
         device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+        gpu="cuda:1"
     elif(whichGPU=="2"):
         print("here2")
         device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+        gpu="cuda:2"
     elif(whichGPU=="3"):
         print("here3")
         device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
+        gpu="cuda:3"
         
-    return device
+    return device, gpu
 
 def main():
     
@@ -78,6 +83,8 @@ def main():
     prs.add_argument('--inputChannels', help='number of input channels - only works for values != 1 with --imageDir 1', type=int, default=1)
     prs.add_argument('--outputChannels', help='number of output channels or classes to predict', type=int, default=2)
     prs.add_argument('--normFile', help='file with mean and SD for normalisation (1st line mean, 2nd line SD)', type=str)
+    prs.add_argument('--zoomFile', help='file with how many um one pixel is for the different datasets (optional)', type=str, default="")
+    prs.add_argument('--whichDataset', help='which Dataset are we doing predictions in', type=str, default="")
     prs.add_argument('--512', help='image size is 512, cuts existing 1024x1024 tiles into 4 bits', type=int, default=0)
 
     args = vars(prs.parse_args())
@@ -124,6 +131,16 @@ def main():
     if args['torchSeed']>0:
         torch.manual_seed(args['torchSeed'])
         print("TORCH SEED IS: "+str(args['torchSeed']))
+        
+
+    ifZoom=0
+    zoomFile = ""
+    whichDataset=""
+    if("zoomFile" in args):
+        whichDataset = args['whichDataset']
+        zoomFile = args['zoomFile']
+        ifZoom=1
+        assert imageDir == 1, "--zoomFile does not work for montages!"
 
     print("IT IS ASSUMED THAT THIS SCRIPT IS EXECUTED FROM THE DIRECTORY OF THE FILE")
 
@@ -132,7 +149,7 @@ def main():
     assert trainOrPredict in ['train', 'predict']
 
     #device = torch.device("cpu")
-    device = select_gpu(gpu)
+    device, whichGPU = select_gpu(gpu)
     print(device)
         
     num_class = args['outputChannels'] - 1
@@ -162,13 +179,13 @@ def main():
     else:
         randOrSeq = "Random"
 
-    preName = randOrSeq+"Tiles_ep"+str(noEpochs)+"t"+date+"g"+str(gamma)+"s"+str(seed)+"au"+str(ifAugment)+"op"+str(whichOptim)+"st"+str(stepSize)+"sB"+str(ifSizeBased)+"LR"+str(learningRate)+"fr"+str(frank)+"ch"+str(inputChannels)+"si"+str(inputSize)
+    preName = randOrSeq+"Tiles_ep"+str(noEpochs)+"t"+date+"g"+str(gamma)+"s"+str(seed)+"au"+str(ifAugment)+"op"+str(whichOptim)+"st"+str(stepSize)+"sB"+str(ifSizeBased)+"LR"+str(learningRate)+"fr"+str(frank)+"ch"+str(inputChannels)+"si"+str(inputSize)+"zo"+str(ifZoom)
     # for the sampling of the augmentation
     augSeed = np.random.randint(0,100000)
     random.seed(augSeed)
 
     if(trainOrPredict == "train"):
-        training_data = get_dataloader(trainDir, valDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank,inputChannels,normFile,input512)
+        training_data = get_dataloader(trainDir, valDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank,inputChannels,normFile,input512,zoomFile)
 
         if whichOptim==0:
 
@@ -196,9 +213,9 @@ def main():
         preName = predictWeights.replace("weights/weights","")
         preName = preName.replace(".dat","")
         # load image
-        model.load_state_dict(torch.load(predictWeights))
+        model.load_state_dict(torch.load(predictWeights,map_location=whichGPU))
         model.eval()
-        results = predict(model,preDir,imageDir,device,preName, normFile, inputChannels)
+        results = predict(model,preDir,imageDir,device,preName, normFile, inputChannels, zoomFile, whichDataset)
 
 if __name__ == "__main__":
     main()

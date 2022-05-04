@@ -20,7 +20,7 @@ import random
 
 from Dataset import GetDataMontage, GetDataFolder, GetDataSeqTilesFolderPred
 
-def predict(model, preDir, imageDir, device, preName, normFile, inputChannels):
+def predict(model, preDir, imageDir, device, preName, normFile, inputChannels, zoomFile, whichDataset):
 
     print("DO I PREDICT!?")
 
@@ -33,7 +33,7 @@ def predict(model, preDir, imageDir, device, preName, normFile, inputChannels):
 
     sample_size_pred = len(os.listdir(preDir))
 
-    pred_set = GetDataSeqTilesFolderPred("predict", preName, normFile, inputChannels, pathDir=preDir, transform=trans)
+    pred_set = GetDataSeqTilesFolderPred("predict", preName, normFile, inputChannels, zoomFile, whichDataset, pathDir=preDir, transform=trans)
     
     batch_size = 2
 
@@ -61,11 +61,11 @@ def predict(model, preDir, imageDir, device, preName, normFile, inputChannels):
         newFile = files[filesWritten].replace(".png","_mask.png")
         newFile = newFile.replace(".jpg","_mask.png")
         newPred = pred[0][0]
-        # Emil - which one to use!?
-        newPred[newPred > 0.5] = 255
-        newPred[newPred <= 0.5] = 0
-        # newPred[newPred > 0.9] = 255
-        # newPred[newPred <= 0.9] = 0
+        # Emil - which one to use!? 0.5 or 0.8?
+        # newPred[newPred > 0.5] = 255
+        # newPred[newPred <= 0.5] = 0
+        newPred[newPred > 0.8] = 255
+        newPred[newPred <= 0.8] = 0
         plt.imsave(preDir+newFile, newPred)
         filesWritten+=1
 

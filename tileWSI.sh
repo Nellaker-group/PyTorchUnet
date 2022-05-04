@@ -15,6 +15,7 @@
 FILE="$1"
 DIR="$2"
 IF512="$3"
+IFSCALESCN="$4"
 
 echo $FILE
 
@@ -36,4 +37,4 @@ echo $INFO2
 echo $INFO3
 echo $INFO4
 
-python tileWSI.py "$FILE" $INFO1 $INFO2 $INFO3 $INFO4 "$DIR" "$IF512"
+python tileWSI.py "$FILE" $INFO1 $INFO2 $INFO3 $INFO4 "$DIR" "$IF512" "$IFSCALESCN"
