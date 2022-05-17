@@ -82,6 +82,7 @@ def main():
     prs.add_argument('--LR', help='start learning rate', type=float)
     prs.add_argument('--inputChannels', help='number of input channels - only works for values != 1 with --imageDir 1', type=int, default=1)
     prs.add_argument('--outputChannels', help='number of output channels or classes to predict', type=int, default=2)
+    prs.add_argument('--trainingChannelsMultiplier', help='multiplier for number of training channels in U-net', type=int, default=1)
     prs.add_argument('--normFile', help='file with mean and SD for normalisation (1st line mean, 2nd line SD)', type=str)
     prs.add_argument('--zoomFile', help='file with how many um one pixel is for the different datasets (optional)', type=str, default="")
     prs.add_argument('--whichDataset', help='which Dataset are we doing predictions in', type=str, default="")
@@ -97,6 +98,8 @@ def main():
     assert args['sizeBasedSamp'] in [0,1]
     assert args['inputChannels'] in [1] or (args['inputChannels'] in [3] and args['imageDir'] in [1])
     assert args['512'] in [0,1]
+
+    assert args['trainingChannelsMultiplier'] in [1,2,3], "max number for the multiplier of training channels is 3!"
 
     assert args['gpu'] in ['0','1','2','3']
     gpu=args['gpu']
@@ -154,12 +157,13 @@ def main():
         
     num_class = args['outputChannels'] - 1
     inputChannels = args['inputChannels']
+    channelsMultiplier = args['trainingChannelsMultiplier']
 
     model = None
     if inputChannels == 1:
-        model = UNet(n_class=num_class,n_input=inputChannels).to(device)
+        model = UNet(n_class=num_class,n_input=inputChannels,channelsMultiplier=channelsMultiplier).to(device)
     else:
-        model = UNet(n_class=num_class, n_input=inputChannels).to(device)
+        model = UNet(n_class=num_class, n_input=inputChannels,channelsMultiplier=channelsMultiplier).to(device)
 
     print("weights are:")
     for param in model.parameters():
@@ -179,7 +183,7 @@ def main():
     else:
         randOrSeq = "Random"
 
-    preName = randOrSeq+"Tiles_ep"+str(noEpochs)+"t"+date+"g"+str(gamma)+"s"+str(seed)+"au"+str(ifAugment)+"op"+str(whichOptim)+"st"+str(stepSize)+"sB"+str(ifSizeBased)+"LR"+str(learningRate)+"fr"+str(frank)+"ch"+str(inputChannels)+"si"+str(inputSize)+"zo"+str(ifZoom)
+    preName = randOrSeq+"Tiles_ep"+str(noEpochs)+"t"+date+"g"+str(gamma)+"s"+str(seed)+"au"+str(ifAugment)+"op"+str(whichOptim)+"st"+str(stepSize)+"sB"+str(ifSizeBased)+"LR"+str(learningRate)+"fr"+str(frank)+"ch"+str(inputChannels)+"si"+str(inputSize)+"zo"+str(ifZoom)+"mu"+str(channelsMultiplier)
     # for the sampling of the augmentation
     augSeed = np.random.randint(0,100000)
     random.seed(augSeed)

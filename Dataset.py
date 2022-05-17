@@ -10,7 +10,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import json
 from augment import augmenter, albumentationAugmenter
-from magnifier import magnify
+from magnifier import magnifyOneTile
 
 # training is done with a montage
 class GetDataMontage(Dataset):
@@ -223,8 +223,7 @@ class GetDataFolder(Dataset):
                 if(np.shape(mask)>(1024,1024)):
                     mask = mask[0:1024,0:1024]
                 if(zoomFile!=""):
-                    im = magnify(im,zoomDict[directory],zoomDict[refData],0,inputChannels,0)
-                    mask = magnify(mask,zoomDict[directory],zoomDict[refData],0,inputChannels,1)
+                    im, mask = magnifyOneTile(im,mask,zoomDict[directory],zoomDict[refData],0,inputChannels)
                 if shape == 512:
                     image_list[whichFolder].append(im[0:512,0:512])
                     image_list[whichFolder].append(im[512:1024,0:512])
@@ -483,12 +482,12 @@ class GetDataSeqTilesFolderPred(Dataset):
                     im = im[0:1024,0:1024]
             else:
                 im = cv2.imread(pathDir + "/" + file)
-                assert np.shape(im) != ()
+                assert np.shape(im) != (), "problem with "+file
                 im = im.astype(np.float32)
                 if(np.shape(im)>(1024,1024,3)):
                     im = im[0:1024,0:1024,0:3]
             if(zoomFile!=""):
-                im = magnify(im,zoomDict[whichDataset],zoomDict[refData],0,inputChannels,0)
+                im,mask = magnifyOneTile(im,mask,zoomDict[whichDataset],zoomDict[refData],0,inputChannels)
             normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
             mask = np.zeros((shape,shape))                      
             mask_list.append(mask)
