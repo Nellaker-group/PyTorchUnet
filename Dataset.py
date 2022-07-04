@@ -122,7 +122,7 @@ class GetDataMontage(Dataset):
         assert np.shape(mask) == (1024,1024) or np.shape(image) == (512,512) 
 
         if choice > 0 and first == 1:
-            # crops from first run
+            # crops from the first run
             if self.whichData=="train":
                 plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+dataName+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+".png", image)
                 plt.imsave("crops"+self.preName+"/train_epochs"+str(self.epochs)+"_"+dataName+"_"+str(x)+"_"+str(y)+"_albuChoice"+str(choice)+"_mask.png", mask)
