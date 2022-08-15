@@ -17,6 +17,8 @@ DIR="$2"
 IF512="$3"
 ZOOMFILE="$4"
 SOURCEDATASET="$5"
+## supposed to be like this 512,512 - how much you shift the frame for tiling
+SHIFT="$6"
 
 echo $FILE
 
@@ -38,4 +40,4 @@ echo $INFO2
 echo $INFO3
 echo $INFO4
 
-python tileWSI.py "$FILE" $INFO1 $INFO2 $INFO3 $INFO4 "$DIR" "$IF512" "$ZOOMFILE" "$SOURCEDATASET"
+python tileWSI.py "$FILE" $INFO1 $INFO2 $INFO3 $INFO4 "$DIR" "$IF512" "$ZOOMFILE" "$SOURCEDATASET" $SHIFT

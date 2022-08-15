@@ -212,9 +212,9 @@ class GetDataFolder(Dataset):
                         im = im[0:1024,0:1024,0:3]
                 mask = cv2.imread(pathDir + "/" + directory + "/mask_" + file, cv2.IMREAD_GRAYSCALE)
                 assert np.shape(mask) != ()
+                # these might cause issues as we are working with .jpeg files currently - that do not store binary masks well, as the pixel values are not exactly 255 and 0
                 assert np.max(mask) == 255
-                assert np.min(mask) == 0
-                # because this is not a binary mask when stored as a .jpg - converting it into a binary mask
+                assert np.min(mask) == 0                
                 middlePoint = (np.max(mask)+np.min(mask))/2
                 maskCopy = np.copy(mask)
                 mask[ maskCopy < middlePoint ]=1
@@ -237,7 +237,6 @@ class GetDataFolder(Dataset):
                     image_list[whichFolder].append(im)
                     mask_list[whichFolder].append(mask)
             whichFolder += 1
-
         # should normalise with data from normFile
         f=open(normFile,"r")
         self.totalMean = float(f.readline())
@@ -482,6 +481,7 @@ class GetDataSeqTilesFolderPred(Dataset):
                     im = im[0:1024,0:1024]
             else:
                 im = cv2.imread(pathDir + "/" + file)
+                # sometimes this causes an issue on certian G nodes
                 assert np.shape(im) != (), "problem with "+file
                 im = im.astype(np.float32)
                 if(np.shape(im)>(1024,1024,3)):
