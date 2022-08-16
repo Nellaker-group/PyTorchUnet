@@ -215,7 +215,8 @@ class GetDataFolder(Dataset):
                 # these might cause issues as we are working with .jpeg files currently - that do not store binary masks well, as the pixel values are not exactly 255 and 0
                 assert np.max(mask) == 255
                 assert np.min(mask) == 0                
-                middlePoint = (np.max(mask)+np.min(mask))/2
+                # cast to int to avoid error overflow encountered in ubyte scalars... meaning uint8 can only hold values between 0 and 255 and then when you take the sum it might give a weird result
+                middlePoint = (int(np.max(mask))+int(np.min(mask)))/2
                 maskCopy = np.copy(mask)
                 mask[ maskCopy < middlePoint ]=1
                 mask[ maskCopy > middlePoint ]=0
