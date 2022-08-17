@@ -12,9 +12,10 @@ from shapely.ops import unary_union
 from create_annotations_1channel_geoJSON import *
 
 prs = argparse.ArgumentParser()
-prs.add_argument('--inputDir', help='input directory of folders with mask files', type=str)
+prs.add_argument('--inputDirOrg', help='input directory of folders with mask files from org tiling', type=str)
+prs.add_argument('--inputDirShift', help='input directory of folders with mask files from shifted tiling', type=str)
 args = vars(prs.parse_args())
-assert args['inputDir'] != ""
+assert args['inputDirOrg'] != "" and args['inputDirShift'] != ""
 
 # Label ids of the dataset
 category_ids = {
@@ -152,31 +153,26 @@ def writeToGeoJSON(masterList, filename):
             features.append(Feature(geometry=Polygon(ll), properties={"id": str(number)}))
         number+=1
     feature_collection = FeatureCollection(features)        
+    ## I add another key to the FeatureCollection dictionary where it can look up max ID, so it knows which ID to work on when adding elements
+    feature_collection["maxID"]=number
     with open(filename,"w") as outfile:
         dump(feature_collection, outfile) 
     outfile.close()
 
 def addToGeoJSON(geoJSONfile,toAdd):
-    ## this function reads in a geoJSON file that is an object with two elements, one a list of all the features, can be accessed writing ['features']
-    ## just add new elements to this and write back as a geoJSON file
-    ######################
-    ## STILL TO DO!!!
-    ## EMIL
-    ## add max ID somewhere!!!    
-    #########################
-    number = 182
     with open(geoJSONfile) as f:
         gj = geojson.load(f)
+    number = gj["maxID"]
     if toAdd.type == 'Polygon':
         gj['features'].append(Feature(geometry=Polygon([(x,y) for x,y in toAdd.exterior.coords]), properties={"id": str(number)}))
     if toAdd.type == 'MultiPolygon':
         mycoordslist = [list(x.exterior.coords) for x in toAdd.geoms]
         ll=[x for xs in mycoordslist for x in xs]
         gj['features'].append(Feature(geometry=Polygon(ll), properties={"id": str(number)}))
-    with open("originalSegmentation_ADDED.geojson","w") as outfile:
+    newname= geoJSONfile.replace(".geojson","_ADDED.geojson")
+    with open(newname,"w") as outfile:
         dump(gj, outfile)
-    outfile.close()    
-
+    outfile.close()   
                 
 if __name__ == "__main__":
     mask_path = "dataset/{}_mask/".format("val")
@@ -187,8 +183,8 @@ if __name__ == "__main__":
     ## go through files of org tiling
 
     masterList = []        
-    masterList = polygonMask(args['inputDir']+"tilesImageCollection_0000000448_2018-05-17_masks",masterList,True)
-    masterList = polygonMask(args['inputDir']+"tilesImageCollection_0000000448_2018-05-17shift_X512_Y512_masks",masterList,False)
+    masterList = polygonMask(args['inputDirOrg'],masterList,True)
+    masterList = polygonMask(args['inputDirShift'],masterList,False)
     masterList = uniquify(masterList)
     writeToGeoJSON(masterList,"mergedSegmentation.geojson")
      
