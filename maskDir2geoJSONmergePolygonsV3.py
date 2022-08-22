@@ -7,6 +7,8 @@ from scipy import ndimage
 from skimage.measure import regionprops
 from matplotlib import pyplot
 from geojson import Point, Feature, FeatureCollection, dump
+import time
+import math
 
 from shapely.ops import unary_union
 from create_annotations_1channel_geoJSONV2 import *
@@ -174,6 +176,18 @@ def polygonMaskV2(filedir,masterList,first):
         masterList = [x for xs in masterList for x in xs]
     return(masterList)
 
+def polsbyPopperTest(polygon):
+    return((4*math.pi*polygon.area ) / ( polygon.length**2 ))
+    
+def polsbyPopperHist(polygonList,inputdir):
+    tmpList = []
+    for poly in polygonList:
+        tmpList.append(polsbyPopperTest(poly))    
+    pyplot.hist(tmpList, bins=10, alpha=0.5, range=(0,1))
+    if "/" in inputdir:
+        pyplot.savefig(list(filter(None,inputdir.split("/")))[-1]+"_polsbyPepperHist.png")
+    else:
+        pyplot.savefig(inputdir+"polsbyPepperHist.png")
     
 def writeToGeoJSON(masterList, filename):
     number=0
@@ -216,11 +230,19 @@ if __name__ == "__main__":
     coco_format["categories"] = create_category_annotation(category_ids)            
     ## go through files of org tiling
 
-    masterList = []        
+    masterList = []  
+    t0 = time.time()
     masterList = polygonMaskV2(args['inputDirOrg'],masterList,True)
+    t1 = time.time()
+    print("First analysis finished:" + str((t1-t0)))
     masterList = polygonMaskV2(args['inputDirShift'],masterList,False)
+    t2 = time.time()
+    print("Second analysis finished:" + str((t2-t0)))
     masterList = uniquify(masterList)
+    t3 = time.time()
+    print("Third analysis finished:" + str((t3-t0)))
     writeToGeoJSON(masterList,"mergedSegmentationV3.geojson")
+    polsbyPopperHist(masterList,args['inputDirOrg'])
      
     ## masterList = []        
     ## masterList = polygonMask(args['inputDir']+"org",masterList,True)
