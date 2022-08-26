@@ -9,7 +9,7 @@ import math
 import matplotlib
 import matplotlib.pyplot as plt
 import json
-from augment import augmenter, albumentationAugmenter
+from augment import albumentationAugmenter
 from magnifier import magnifyOneTile
 
 # training is done with a montage
@@ -428,6 +428,7 @@ class GetDataSeqTilesFolderPred(Dataset):
         image_list = []        
         big_mask_list = []        
         big_image_list = []        
+        filename_list = []        
         files.sort()
         self.whichData = whichData
         self.counter=0
@@ -493,7 +494,9 @@ class GetDataSeqTilesFolderPred(Dataset):
             mask = np.zeros((shape,shape))                      
             mask_list.append(mask)
             image_list.append(normalize(im))
-
+            filename_list.append(file)
+            
+        self.input_filenames = filename_list
         self.input_images = image_list
         self.target_masks = mask_list
         self.transform = transform      
@@ -504,8 +507,9 @@ class GetDataSeqTilesFolderPred(Dataset):
     def __getitem__(self, idx):
         image = self.input_images[idx]
         mask = self.target_masks[idx]
+        filename = self.input_filenames[idx]
             
         if self.transform:
             image = self.transform(image)
             mask = self.transform(mask)
-        return [image, mask]
+        return [image, mask, filename]

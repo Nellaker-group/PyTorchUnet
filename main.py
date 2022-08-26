@@ -27,6 +27,7 @@ from model import count_parameters
 from DataLoader import get_dataloader
 from training import train_model
 from prediction import predict
+from geojsonHandler import writeToGeoJSON
 
 def select_gpu(whichGPU):
     
@@ -87,6 +88,7 @@ def main():
     prs.add_argument('--zoomFile', help='file with how many um one pixel is for the different datasets (optional)', type=str, default="")
     prs.add_argument('--whichDataset', help='which Dataset are we doing predictions in', type=str, default="")
     prs.add_argument('--512', help='image size is 512, cuts existing 1024x1024 tiles into 4 bits', type=int, default=0)
+    prs.add_argument('--predThres', help='threshold for predictions and creating mask - default is 0.8', type=float, default=0.8)
 
     args = vars(prs.parse_args())
     assert args['mode'] in ['train', 'predict']
@@ -126,6 +128,7 @@ def main():
     learningRate=args['LR']
     frank=args['frankenstein']
     input512=args['512']
+    predThreshold=args['predThres']
     
     inputSize = 1024
     if input512 == 1:
@@ -135,7 +138,6 @@ def main():
         torch.manual_seed(args['torchSeed'])
         print("TORCH SEED IS: "+str(args['torchSeed']))
         
-
     ifZoom=0
     zoomFile = ""
     whichDataset=""
@@ -146,7 +148,7 @@ def main():
         assert imageDir == 1, "--zoomFile does not work for montages!"
 
     print("IT IS ASSUMED THAT THIS SCRIPT IS EXECUTED FROM THE DIRECTORY OF THE FILE")
-
+    print("IT IS ALSO ASSUMED THAT THE TILING WAS DONE WITH tileWSI.sh FROM THIS GITHUB DIR")
     assert os.path.isfile("main.py") and os.path.isfile("DataLoader.py") and os.path.isfile("loss.py") 
 
     assert trainOrPredict in ['train', 'predict']
@@ -183,7 +185,7 @@ def main():
     else:
         randOrSeq = "Random"
 
-    preName = randOrSeq+"Tiles_ep"+str(noEpochs)+"t"+date+"g"+str(gamma)+"s"+str(seed)+"au"+str(ifAugment)+"op"+str(whichOptim)+"st"+str(stepSize)+"sB"+str(ifSizeBased)+"LR"+str(learningRate)+"fr"+str(frank)+"ch"+str(inputChannels)+"si"+str(inputSize)+"zo"+str(ifZoom)+"mu"+str(channelsMultiplier)
+    preName = randOrSeq+"Tiles_ep"+str(noEpochs)+"t"+date+"g"+str(gamma)+"s"+str(seed)+"au"+str(ifAugment)+"op"+str(whichOptim)+"st"+str(stepSize)+"sB"+str(ifSizeBased)+"LR"+str(learningRate)+"fr"+str(frank)+"ch"+str(inputChannels)+"si"+str(inputSize)+"zo"+str(ifZoom)+"mu"+str(channelsMultiplier)+"pt"+str(predThreshold)
     # for the sampling of the augmentation
     augSeed = np.random.randint(0,100000)
     random.seed(augSeed)
@@ -216,10 +218,19 @@ def main():
         predictWeights=args['weights']
         preName = predictWeights.replace("weights/weights","")
         preName = preName.replace(".dat","")
+        if preDir.endswith("/"):
+            predDir = preDir[:-1]
+        predMaskDir = predDir+"_predMasks"
+        os.mkdir(predMaskDir)
+        predMaskDir = predMaskDir + "/"
+
         # load image
         model.load_state_dict(torch.load(predictWeights,map_location=whichGPU))
         model.eval()
-        results = predict(model,preDir,imageDir,device,preName, normFile, inputChannels, zoomFile, whichDataset)
+
+        polygonList = predict(model,preDir,imageDir,device,preName, normFile, inputChannels, zoomFile, whichDataset, predThreshold, predMaskDir)
+        # write to geoJSON
+        writeToGeoJSON(polygonList, preName + ".geojson")
 
 if __name__ == "__main__":
     main()
