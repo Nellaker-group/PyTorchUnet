@@ -6,11 +6,11 @@ import numpy as np
 from scipy import ndimage
 from skimage.measure import regionprops
 from matplotlib import pyplot
-from geojson import Point, Feature, FeatureCollection, dump
+import geojson 
 import time
 import math
 from shapely.ops import unary_union
-from shapely.geometry import Polygon, MultiPolygon  
+from shapely.geometry import Polygon, MultiPolygon, shape
 
 def writeToGeoJSON(masterList, filename):
     number=0
