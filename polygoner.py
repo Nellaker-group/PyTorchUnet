@@ -2,8 +2,6 @@ from PIL import Image                                      # (pip install Pillow
 import numpy as np                                         # (pip install numpy)
 from skimage import measure                                # (pip install scikit-image)
 from shapely.geometry import Polygon, MultiPolygon         # (pip install Shapely)
-import os
-import json
 
 # expects mask to be 0 and 1
 def draw_polygons_from_mask(mask,X,Y):

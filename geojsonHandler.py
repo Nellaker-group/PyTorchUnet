@@ -49,7 +49,7 @@ def addToGeoJSON(filename,polyToAdd):
     outfile.close()   
 
 def readGeoJSON2list(filename):
-    with open(geojsonOrg) as f0:
+    with open(filename) as f0:
         gj0 = geojson.load(f0)
     f0.close()
     polyList = geojson2polygon(gj0)
