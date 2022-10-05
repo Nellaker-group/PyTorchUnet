@@ -14,16 +14,22 @@ def merge_polys(new_poly, all_polys):
             all_polys_list.append(existing_poly)
     return all_polys_list
 
-
+## old version of this function
 def same_area(poly0, poly1, thres=0.0001):
     return abs(poly0.area-poly1.area) < thres
+
+## updated so this one also checks that the max position of X and Y is the same
+def same_area_coords(poly0, poly1, thres=0.0001):
+    same_coords = abs(poly0.bounds[0] - poly1.bounds[0]) < thres and abs(poly0.bounds[1] - poly1.bounds[1]) < thres
+    same_area = abs(poly0.area-poly1.area) < thres
+    return same_coords and same_area
 
 
 def uniquify(masterList):
     ## we remove dupliace polygons, by removing polygons with the same area (within threshold)
     uniqpolies = []
     for poly in masterList:
-        if not any(same_area(p,poly) for p in uniqpolies):
+        if not any(same_area_coords(p,poly) for p in uniqpolies):
             uniqpolies.append(poly) 
     return(uniqpolies)
 

@@ -58,7 +58,7 @@ def predict(model, preDir, imageDir, device, preName, normFile, inputChannels, z
         # The loss functions include the sigmoid function.
         pred = torch.sigmoid(pred)
         pred = pred.data.cpu().numpy()
-
+        
         # first element of the batch
         newFilename, X, Y = addMaskgetXY(filenames[0])
         newPred = pred[0][0]

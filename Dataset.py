@@ -508,7 +508,6 @@ class GetDataSeqTilesFolderPred(Dataset):
         image = self.input_images[idx]
         mask = self.target_masks[idx]
         filename = self.input_filenames[idx]
-            
         if self.transform:
             image = self.transform(image)
             mask = self.transform(mask)
