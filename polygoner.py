@@ -13,7 +13,6 @@ def draw_polygons_from_mask(mask,X,Y):
     # is partially occluded. (E.g. an elephant behind a tree)
     contours = measure.find_contours(padded_mask, 0.5, positive_orientation="low")  
     polygons = []
-    segmentations = []
     for contour in contours:
         # Flip from (row, col) representation to (x, y)
         # and subtract the padding pixel
@@ -28,14 +27,8 @@ def draw_polygons_from_mask(mask,X,Y):
             # Go to next iteration, dont save empty values in list
             continue
         polygons.append(poly)
-        if poly.type == 'Polygon':
-            segmentation = np.array(poly.exterior.coords).ravel().tolist()
-        elif poly.type == 'MultiPolygon':
-            segmentation = np.array(poly.geoms).ravel().tolist()
-        segmentations.append(segmentation)
     # checking that polygons are not contained in another polygon
     polygonsKeep = []
-    segmentationsKeep = []
     for j in range(0, len(polygons)):                
         contained=False
         intersected=False
@@ -46,8 +39,7 @@ def draw_polygons_from_mask(mask,X,Y):
                 intersected=True
         if contained and intersected:
             polygonsKeep.append(polygons[j])
-            segmentationsKeep.append(polygons[j])
         elif not intersected and not contained:
             polygonsKeep.append(polygons[j])
-            segmentationsKeep.append(polygons[j])
-    return polygonsKeep, segmentationsKeep
+    return polygonsKeep
+
