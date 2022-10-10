@@ -4,21 +4,15 @@ from shapely.geometry import shape
 from shapely.ops import unary_union
 
 
-# new updated version from Chris 07-10-2022
+# new updated version from Chris 10-10-2022
 def merge_polys(new_poly, all_polys):
     all_polys_list = []
-    intersect_flag = False
-    emptyPoly = Polygon([[-10, -10], [-10, -10], [-10, -10]])
-    if all_polys == []: all_polys = [emptyPoly]
-    for existing_poly in all_polys:        
+    for existing_poly in all_polys:
         if new_poly.intersects(existing_poly):
-            intersect_flag = True
-            new_poly = unary_union([new_poly, existing_poly])            
-            all_polys_list = merge_polys(new_poly, all_polys_list)
-        else:  
+            new_poly = unary_union([new_poly, existing_poly])
+        else:
             all_polys_list.append(existing_poly)
-    if not intersect_flag: 
-        all_polys_list.append(new_poly)
+    all_polys_list.append(new_poly)
     return all_polys_list
 
 
