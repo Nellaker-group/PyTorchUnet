@@ -6,7 +6,7 @@ import numpy as np
 from scipy import ndimage
 from skimage.measure import regionprops
 from matplotlib import pyplot
-import geojson 
+from geojson import Feature, FeatureCollection, dump
 import time
 import math
 from shapely.ops import unary_union
