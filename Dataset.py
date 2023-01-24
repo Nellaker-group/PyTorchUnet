@@ -213,10 +213,11 @@ class GetDataFolder(Dataset):
                 mask = cv2.imread(pathDir + "/" + directory + "/mask_" + file, cv2.IMREAD_GRAYSCALE)
                 assert np.shape(mask) != ()
                 # these might cause issues as we are working with .jpeg files currently - that do not store binary masks well, as the pixel values are not exactly 255 and 0
-                assert np.max(mask) == 255
-                assert np.min(mask) == 0                
+                # changed the assert statement so either min is 0 or max is 255, because it might be an all empty tile - that would be only white for example
+                assert np.max(mask) == 255 or np.min(mask) == 0
                 # cast to int to avoid error overflow encountered in ubyte scalars... meaning uint8 can only hold values between 0 and 255 and then when you take the sum it might give a weird result
-                middlePoint = (int(np.max(mask))+int(np.min(mask)))/2
+                # BE CAREFUL THIS DOES NOT WORK AS SOME MASKS CAN BE ALL 0 or 255 and then the middlePoint is 0 or 255 and the mask will get the wrong values
+                middlePoint = (0 + 255) / 2                    
                 maskCopy = np.copy(mask)
                 mask[ maskCopy < middlePoint ]=1
                 mask[ maskCopy > middlePoint ]=0
