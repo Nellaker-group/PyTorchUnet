@@ -6,9 +6,16 @@ def magnifyOneTile(image,mask,umSource,umTarget,input512,inputChannels):
     size=1024
     if(input512==1):
         size=512
-    assert umSource+0.001 > umTarget
+    assert umSource < umTarget + 0.001
     ratio = umTarget / umSource
     newSize=int(size*(ratio))
+
+    # emil - does not really work at the moment as the tile you read in should be bigger in pixel size so you can zoom in!
+    print("newSize")
+    print(newSize)
+    print(umSource)
+    print(umTarget)
+
     # to get uint8 that PIL works with
     newImage = image.astype(np.uint8)
     newMask = mask.astype(np.uint8)
@@ -23,6 +30,15 @@ def magnifyOneTile(image,mask,umSource,umTarget,input512,inputChannels):
     else:
         im2 = Image.fromarray(newImage[indent[0]:(indent[0]+newSize),indent[1]:(indent[1]+newSize)],"L")
         mask2 = Image.fromarray(newMask[indent[0]:(indent[0]+newSize),indent[1]:(indent[1]+newSize)],"L")
+
+    # emil
+    print("np.shape(im2)")
+    print(np.shape(im2))
+    print("np.shape(mask2)")
+    print(np.shape(mask2))
+    if(umTarget != umSource):
+        quit()
+
     # make image larger
     im3 = im2.resize((size,size))
     mask3 = mask2.resize((size,size))
