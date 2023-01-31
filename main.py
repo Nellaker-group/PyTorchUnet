@@ -207,7 +207,7 @@ def main():
         os.mkdir('crops'+preName+'/') 
 
         f=open("log"+preName+".log","w")
-        model = train_model(model, training_data, device, optimizer_ft, lr_scheduler1, f, preName, whichOptim, num_epochs=noEpochs)
+        model = train_model(model, training_data, device, optimizer_ft, lr_scheduler1, f, preName, whichOptim, predThreshold, num_epochs=noEpochs)
         if os.path.isdir('weights/'): 
             torch.save(model.state_dict(),"weights/weights"+preName+".dat")
         else:

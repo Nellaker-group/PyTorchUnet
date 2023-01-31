@@ -32,18 +32,23 @@ class GetDataMontage(Dataset):
         self.frank=frank
         self.augSeed=augSeed
         self.shape=shape
+        # for storing the name of the datasets
+        self.datasets = {}
                 
+        count = 0 
         for file in files:
             if "_mask.npy" in file:
                 continue
             print("file being read is:")
             print(file)
+            self.datasets[str(count)] = file.split("_")[0]
             im = np.load(pathDir + file)
             newFile = file.replace(".npy","_mask.npy")
             #because empty spaces are 1 and adipocytes 0 originally
             mask = 1-np.load(pathDir + newFile)
             image_list.append(im)
             mask_list.append(mask)
+            count += 1
 
         # should normalise with data from normFile
         f=open(normFile,"r")
@@ -64,6 +69,8 @@ class GetDataMontage(Dataset):
         shape = self.shape
 
         dataName = str(data)
+        # this is for keeping track of the dataset name (gtex, munich, ...) to report validation loss per dataset
+        datasetName = ""
 
         if self.whichData=="train" and self.frank == 1:
             
@@ -97,6 +104,7 @@ class GetDataMontage(Dataset):
             dataName = dataName.replace("[","").replace("]","").replace("(","").replace(")","").replace(", ","-")
 
         else:
+            datasetName = self.datasets[str(data)]
             image = self.input_images[data][x:(x+shape),y:(y+shape)] 
             mask = self.target_masks[data][x:(x+shape),y:(y+shape)] 
         choice=0
@@ -142,7 +150,7 @@ class GetDataMontage(Dataset):
             image = self.transform(image)
             mask = self.transform(mask)
 
-        return [image, mask]
+        return [image, mask, datasetName]
 
 # training is done here
 class GetDataFolder(Dataset):
@@ -158,6 +166,14 @@ class GetDataFolder(Dataset):
         mask_list = []        
         image_list = []        
         directories.sort()
+
+        self.datasets = {}
+
+        count = 0
+        for directory in directories:
+            self.datasets[str(count)] = directory
+            count += 1
+
         self.whichData = whichData
         self.preName = preName
         self.epochs=0
@@ -266,6 +282,8 @@ class GetDataFolder(Dataset):
         shape = self.shape
 
         dataName = str(data)+"_"+str(i)
+        # this is for keeping track of the dataset name (gtex, munich, ...) to report validation loss per dataset
+        datasetName = ""
 
         if self.whichData=="train" and self.frank == 1:
 
@@ -345,6 +363,8 @@ class GetDataFolder(Dataset):
             dataName = dataName.replace("[","").replace("]","").replace("(","").replace(")","").replace(", ","-")
 
         else:
+            # for reporting val loss per dataset
+            datasetName = self.datasets[str(data)]
             image = self.input_images[data][i] 
             mask = self.target_masks[data][i] 
         choice=0
@@ -403,16 +423,11 @@ class GetDataFolder(Dataset):
 
         normalize = lambda x: (x - self.totalMean) / (self.totalStd + 1e-10)
         image = normalize(image)
-        if self.transform:
-            image = self.transform(image)
-            mask = self.transform(mask)
-
-        return [image, mask]
             
         if self.transform:
             image = self.transform(image)
             mask = self.transform(mask)
-        return [image, mask]
+        return [image, mask, datasetName]
 
 
 

@@ -14,7 +14,7 @@ from torch.utils.data.sampler import Sampler
 import matplotlib.pyplot as plt
 
 from Dataset import GetDataMontage, GetDataFolder
-from loss import calc_loss, calc_lossCraig
+from loss import calc_loss, calc_loss_val
 
 
 def print_metrics(metrics, epoch_samples, phase, f, lr):
@@ -27,13 +27,29 @@ def print_metrics(metrics, epoch_samples, phase, f, lr):
     print("{}: {}".format(phase, ", ".join(outputs)),file=f)
 
 
-# dumps first tile from training with its predicted mask and ground truth mask
-def dump_predictions(labels,outputs,epoch,preName,phase,shape=1024):
+
+def print_metrics_val(metrics, epoch_samples_dict, phase, f, lr):
+    outputs = []
+    count = 0
+    
+    for k in metrics.keys():
+        outputs.append("{}: {:f}".format(k, metrics[k] / epoch_samples_dict[k.split("_")[0]]))
+        count += 1
+        if count == 3:
+            outputs.append("LR: {:e}".format(lr[0]))        
+            print("{}: {}".format(phase, ", ".join(outputs)))
+            print("{}: {}".format(phase, ", ".join(outputs)),file=f)
+            count = 0
+            outputs = []
+        
+
+# dumps first tile from training with its predicted mask and ground truth mask - uses pred threshold from predctions
+def dump_predictions(labels,outputs,epoch,preName,phase,pred_threshold,shape=1024):
     labTmp=labels[0].detach().cpu().numpy()
     outTmp=torch.sigmoid(outputs)
     outTmp=outTmp[0].detach().cpu().numpy()
-    outTmp[outTmp > 0.5] = 255
-    outTmp[outTmp <= 0.5] = 0
+    outTmp[outTmp > pred_threshold] = 255
+    outTmp[outTmp <= pred_threshold] = 0
     if phase == 'train':
         plt.imsave("crops"+preName+"/trainLabels_epoch"+str(epoch)+".png",  labTmp[0,0:shape,0:shape])
         plt.imsave("crops"+preName+"/trainPredicted_epoch"+str(epoch)+".png", outTmp[0,0:shape,0:shape])
@@ -42,7 +58,7 @@ def dump_predictions(labels,outputs,epoch,preName,phase,shape=1024):
         plt.imsave("crops"+preName+"/valPredicted_epoch"+str(epoch)+".png", outTmp[0,0:shape,0:shape])
 
         
-def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, whichOptim, num_epochs=25):
+def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, whichOptim, pred_threshold, num_epochs=25):
     best_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 1e10
     for epoch in range(num_epochs):
@@ -64,7 +80,10 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, wh
                 model.eval()   # Set model to evaluate mode
             metrics = defaultdict(float)
             epoch_samples = 0
-            for inputs, labels in dataloaders[phase]:
+            # for keeping track of number of samples from the different datasets (munich, gtex, ...) per epoch 
+            epoch_samples_dict = {}
+            # now also gets name of dataset from DataLoader or __getitem__ method for the Dataset class
+            for inputs, labels, datasetNames in dataloaders[phase]:
                 inputs = inputs.to(device)
                 labels = labels.to(device)
                 # zero the parameter gradients
@@ -73,7 +92,11 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, wh
                 # track history if only in train
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
-                    loss = calc_lossCraig(outputs, labels, metrics)
+                    # calculate loss per dataset for the validation - therefore different function
+                    if phase == "val":
+                        loss = calc_loss_val(outputs, labels, metrics, datasetNames, phase)
+                    else:
+                        loss = calc_loss(outputs, labels, metrics)
                     # backward + optimize only if in training phase
                     if phase == 'train':
                         loss.backward()
@@ -81,13 +104,28 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, wh
                         # if cyclicLR we also have to call scheduler here, to increase LR
                         if whichOptim == 0:
                             scheduler.step()
-                # statistics
+                # statistics - or number of samples run through in this epoch
                 epoch_samples += inputs.size(0)
+                # this is for counting how many samples from this epoch is from a specific dataset
+                for datasetName in datasetNames:
+                    if phase == "val":
+                        try:
+                            epoch_samples_dict[datasetName] += 1
+                        except KeyError:
+                            epoch_samples_dict[datasetName] = 1
+
                 # writing training predictions
                 if(writePred==0):
-                    dump_predictions(labels,outputs,epoch,preName,phase)
+                    dump_predictions(labels,outputs,epoch,preName,phase,pred_threshold)
                     writePred=1                                    
-            print_metrics(metrics, epoch_samples, phase, f, scheduler.get_last_lr())
+            # this is for getting the total number of samples per epoch for reporting the total loss for validation
+            epoch_samples_dict["TOTAL"] = epoch_samples
+            if phase == "train":
+                # this just prints loss, bce and dice for the whole dataset
+                print_metrics(metrics, epoch_samples, phase, f, scheduler.get_last_lr())
+            else:
+                # this prints loss, bce and dice per dataset and for the whole dataset
+                print_metrics_val(metrics, epoch_samples_dict, phase, f, scheduler.get_last_lr())
             epoch_loss = metrics['loss'] / epoch_samples
             # deep copy the model
             if phase == 'val' and epoch_loss < best_loss:
