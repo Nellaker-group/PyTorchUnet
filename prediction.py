@@ -31,8 +31,6 @@ def addMaskgetXY(filename):
 
 def predict(model, preDir, imageDir, device, preName, normFile, inputChannels, zoomFile, whichDataset, predThreshold, predMaskDir):
 
-    print("DO I PREDICT!?")
-
     # use the same transformations for train/val in this example
     trans = transforms.Compose([
         transforms.ToTensor(),
@@ -42,7 +40,7 @@ def predict(model, preDir, imageDir, device, preName, normFile, inputChannels, z
     pred_set = GetDataSeqTilesFolderPred("predict", preName, normFile, inputChannels, zoomFile, whichDataset, pathDir=preDir, transform=trans)
     batch_size = 2
     test_loader = DataLoader(pred_set, batch_size=batch_size, shuffle=False, num_workers=0)    
-    filesWritten=0
+    filesWritten = 0
 
     files = os.listdir(preDir)
     files = [s for s in files if not "_mask.png" in s]
@@ -66,9 +64,10 @@ def predict(model, preDir, imageDir, device, preName, normFile, inputChannels, z
         newPred[newPred <= predThreshold] = 0
         # put masks in new directory
         # and geojson file
+
         plt.imsave(predMaskDir+newFilename, newPred)
-        filesWritten+=1
-        polygons, segmentations = draw_polygons_from_mask(newPred,X,Y)
+        filesWritten += 1
+        polygons = draw_polygons_from_mask(newPred,X,Y)
         polygonList.append(polygons)
 
         # check that there files left to be predicted on, since we have batch of two
@@ -81,8 +80,8 @@ def predict(model, preDir, imageDir, device, preName, normFile, inputChannels, z
         newPred[newPred > predThreshold] = 255
         newPred[newPred <= predThreshold] = 0
         plt.imsave(predMaskDir+newFilename, newPred)
-        filesWritten+=1
-        polygons, segmentations = draw_polygons_from_mask(newPred,X,Y)
+        filesWritten += 1
+        polygons = draw_polygons_from_mask(newPred,X,Y)
         polygonList.append(polygons)
 
     polygonList = [x for xs in polygonList for x in xs]

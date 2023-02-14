@@ -226,7 +226,11 @@ class GetDataFolder(Dataset):
                     im = im.astype(np.float32)
                     if(np.shape(im)>(1024,1024,3)):
                         im = im[0:1024,0:1024,0:3]
-                mask = cv2.imread(pathDir + "/" + directory + "/mask_" + file, cv2.IMREAD_GRAYSCALE)
+                # if mask exists as png and tile a jpg
+                if os.path.exists(pathDir + "/" + directory + "/mask_" + file):
+                    mask = cv2.imread(pathDir + "/" + directory + "/mask_" + file, cv2.IMREAD_GRAYSCALE)
+                elif os.path.exists(pathDir + "/" + directory + "/mask_" + file.replace(".jpg",".png")):
+                    mask = cv2.imread(pathDir + "/" + directory + "/mask_" + file.replace(".jpg",".png"), cv2.IMREAD_GRAYSCALE)
                 assert np.shape(mask) != ()
                 # these might cause issues as we are working with .jpeg files currently - that do not store binary masks well, as the pixel values are not exactly 255 and 0
                 # changed the assert statement so either min is 0 or max is 255, because it might be an all empty tile - that would be only white for example
