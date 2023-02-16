@@ -61,6 +61,7 @@ def dump_predictions(labels,outputs,epoch,preName,phase,pred_threshold,shape=102
 def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, whichOptim, pred_threshold, num_epochs=25):
     best_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 1e10
+    epoch_loss = 1e10
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
@@ -123,10 +124,13 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, wh
             if phase == "train":
                 # this just prints loss, bce and dice for the whole dataset
                 print_metrics(metrics, epoch_samples, phase, f, scheduler.get_last_lr())
+                # the train loss is just called "loss"
+                epoch_loss = metrics['loss'] / epoch_samples
             else:
                 # this prints loss, bce and dice per dataset and for the whole dataset
                 print_metrics_val(metrics, epoch_samples_dict, phase, f, scheduler.get_last_lr())
-            epoch_loss = metrics['loss'] / epoch_samples
+                # because the val loss is called TOTAL_loss
+                epoch_loss = metrics['TOTAL_loss'] / epoch_samples            
             # deep copy the model
             if phase == 'val' and epoch_loss < best_loss:
                 print("saving best model")
