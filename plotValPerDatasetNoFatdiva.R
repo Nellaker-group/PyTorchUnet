@@ -31,13 +31,12 @@ ymin<-min(c(res[ grepl("train",res$V1),"V7"],res[  grepl("val:",res$V1) & grepl(
 plot(1:epochs, res[ grepl("train",res$V1),"V7"],type="l",xlab="epochs",ylab="loss",ylim=c(0,2),col="red",main=paste0("loss, min loss=",minLoss,", min Loss Dice=",minLossDice)); 
 lines(1:epochs, res[ grepl("TOTAL",res$V2) ,"V7"],col="blue")
 lines(1:epochs, res[ grepl("endox",res$V2),"V7"],col="grey")
-lines(1:epochs, res[ grepl("fatdiva",res$V2),"V7"],col="orange")
 lines(1:epochs, res[ grepl("gtex",res$V2),"V7"],col="green")
 lines(1:epochs, res[ grepl("hohen",res$V2),"V7"],col="black")
 lines(1:epochs, res[ grepl("leipzig",res$V2),"V7"],col="purple")
 lines(1:epochs, res[ grepl("munich",res$V2),"V7"],col="gold")
 
-legend("topright",c("train TOTAL","val TOTAL","val endox","val fatdiva","val gtex", "val hohen", "val leipzig", "val munich"),fill=c("blue","red","grey","orange","green","black","purple","gold"))
+legend("topright",c("train TOTAL","val TOTAL","val endox","val gtex", "val hohen", "val leipzig", "val munich"),fill=c("red","blue","grey","green","black","purple","gold"))
 
 plot(1:epochs, log10(res[ grepl("train",res$V1),"V9"]),type="l",xlab="epochs",ylab="log10(LR)",col="black",main="learning rate (LR)")
 par(xpd=T)
@@ -54,12 +53,11 @@ ymin<-min(c(1-res[ grepl("train",res$V1),"V5"],res[ grepl("val:",res$V1) & grepl
 plot(1:epochs, 1-res[ grepl("train",res$V1),"V5"],type="l",xlab="epochs",ylab="dice coef",ylim=c(0.2,1),col="red",main=paste0("dice coef, max Dice=",maxDice))
 lines(1:epochs, 1-res[ grepl("TOTAL",res$V2),"V7"],col="blue")
 lines(1:epochs, 1-res[ grepl("endox",res$V2),"V7"],col="grey")
-lines(1:epochs, 1-res[ grepl("fatdiva",res$V2),"V7"],col="orange")
 lines(1:epochs, 1-res[ grepl("gtex",res$V2),"V7"],col="green")
 lines(1:epochs, 1-res[ grepl("hohen",res$V2),"V7"],col="black")
 lines(1:epochs, 1-res[ grepl("leipzig",res$V2),"V7"],col="purple")
 lines(1:epochs, 1-res[ grepl("munich",res$V2),"V7"],col="gold")
-legend("topright",c("train TOTAL","val TOTAL","val endox","val fatdiva","val gtex", "val hohen", "val leipzig", "val munich"),fill=c("blue","red","grey","orange","green","black","purple","gold"))
+legend("topright",c("train TOTAL","val TOTAL","val endox","val gtex", "val hohen", "val leipzig", "val munich"),fill=c("red","blue","grey","green","black","purple","gold"))
 
 plot(1:epochs, log10(res[ grepl("train",res$V1),"V9"]),type="l",xlab="epochs",ylab="log10(LR)",col="black",main="learning rate (LR)")
 par(xpd=T)
