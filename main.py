@@ -91,6 +91,7 @@ def main():
     prs.add_argument('--whichDataset', help='which Dataset are we doing predictions in', type=str, default="")
     prs.add_argument('--512', help='image size is 512, cuts existing 1024x1024 tiles into 4 bits', type=int, default=0)
     prs.add_argument('--predThres', help='threshold for predictions and creating mask - default is 0.8', type=float, default=0.8)
+    prs.add_argument('--dirtyPredict', help='a nasty dirty way of doing predictions on a test set disguised as validation', type=int, default=0)
 
     args = vars(prs.parse_args())
     assert args['mode'] in ['train', 'predict']
@@ -131,6 +132,7 @@ def main():
     frank=args['frankenstein']
     input512=args['512']
     predThreshold=args['predThres']
+    dirtyPredict=args['dirtyPredict']
     
     inputSize = 1024
     if input512 == 1:
@@ -154,6 +156,13 @@ def main():
     assert os.path.isfile("main.py") and os.path.isfile("DataLoader.py") and os.path.isfile("loss.py") 
 
     assert trainOrPredict in ['train', 'predict']
+
+    if dirtyPredict:
+        assert args['weights'] != ""
+        assert learningRate == 0
+        assert noEpochs == 1
+        print(""
+        print("DOING DIRTY PREDICT WHERE VAL DATA IS TREATED LIKE TEST DATA - QUICK AND DIRTY WAY TO GET TEST RESULTS")
 
     #device = torch.device("cpu")
     device, whichGPU = select_gpu(gpu)
@@ -209,7 +218,13 @@ def main():
         os.mkdir('crops'+preName+'/') 
 
         f=open("log"+preName+".log","w")
-        model = train_model(model, training_data, device, optimizer_ft, lr_scheduler1, f, preName, whichOptim, predThreshold, num_epochs=noEpochs)
+        if dirtyPredict:
+            dirtyWeights=args['weights']
+            model.load_state_dict(torch.load(dirtyWeights,map_location=whichGPU))
+            model.eval()
+            model = train_model(model, training_data, device, optimizer_ft, lr_scheduler1, f, preName, whichOptim, predThreshold, num_epochs=noEpochs, weights=dirtyWeights, dirtyPredict=dirtyPredict)
+        else:
+            model = train_model(model, training_data, device, optimizer_ft, lr_scheduler1, f, preName, whichOptim, predThreshold, num_epochs=noEpochs)
         if os.path.isdir('weights/'): 
             torch.save(model.state_dict(),"weights/weights"+preName+".dat")
         else:
