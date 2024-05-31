@@ -114,7 +114,6 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, wh
                             epoch_samples_dict[datasetName] += 1
                         except KeyError:
                             epoch_samples_dict[datasetName] = 1
-
                 # writing training predictions
                 if(writePred==0):
                     dump_predictions(labels,outputs,epoch,preName,phase,pred_threshold)

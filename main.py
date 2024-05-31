@@ -161,7 +161,7 @@ def main():
         assert args['weights'] != ""
         assert learningRate == 0
         assert noEpochs == 1
-        print(""
+        print("")
         print("DOING DIRTY PREDICT WHERE VAL DATA IS TREATED LIKE TEST DATA - QUICK AND DIRTY WAY TO GET TEST RESULTS")
 
     #device = torch.device("cpu")
@@ -222,7 +222,7 @@ def main():
             dirtyWeights=args['weights']
             model.load_state_dict(torch.load(dirtyWeights,map_location=whichGPU))
             model.eval()
-            model = train_model(model, training_data, device, optimizer_ft, lr_scheduler1, f, preName, whichOptim, predThreshold, num_epochs=noEpochs, weights=dirtyWeights, dirtyPredict=dirtyPredict)
+            model = train_model(model, training_data, device, optimizer_ft, lr_scheduler1, f, preName, whichOptim, predThreshold, num_epochs=noEpochs)
         else:
             model = train_model(model, training_data, device, optimizer_ft, lr_scheduler1, f, preName, whichOptim, predThreshold, num_epochs=noEpochs)
         if os.path.isdir('weights/'): 
