@@ -58,3 +58,64 @@ Command line options explained:
 --predThres, help='threshold for predictions and creating mask - default is 0.8', type=float, default=0.8
 --dirtyPredict, help='a nasty dirty way of doing predictions on a test set disguised as validation', type=int, default=0
 ```
+
+# How to annotate
+
+Open your microscope file with adipose tissue in QuPath
+
+Click on the "Annotations" on the left > Click the button with three vertical dots (in lower right corner of the box) > Click "Add/Remove..." > Click "Add Class" > enter "Adipocyte" as Class Name and click OK
+Click on the cog wheel icon ("Preferences") > In that tab click on Viewer (and scroll down) > Then deselect "Grid Spacing in um" and change "Grid spacing X" and "Grid spacing Y" to the right values (in my case 1024)
+Then click on the grid icon ("Show grid", next to the cog wheel icon) to show the grid imposed on the whole slide image
+In the "Annotations" tab click on the "Adipocyte" class then click on the wand icon
+
+Fill in the adipocyte in a chosen tile holding SHIFT+CTRL and then filling in the adipocyte with left click
+You can delete by holding ALT and then removing with left click
+The Brush icon can also be click for a regular brush without any automation (holding SHIFT+CTRL or ALT works here as well)
+
+When you are done with a tile make sure the drawn polygons in the Annotations tab have the class "Adipocyte"
+If they do not select all those (you can select more holding CTRL or SHIFT and then clicking) and then select the "Adipocyte" then press the "Set class" button
+
+Then click on "Automate" in the menu bar then select "Show script editor" Open a New Script
+Use the following groovy script (change the variables "localPath" and "tileSize"):
+
+```
+import qupath.lib.images.servers.LabeledImageServer
+
+def imageData = getCurrentImageData()
+// Define path where to store tiles on your local computer (if Windows you need "\\" instead of "\")
+def localPath = ""
+// Define size of tiles, right now the training only works with tiles of size 1024x1024
+def tileSize = 1024
+
+// Define output path (relative to project)
+def name = GeneralTools.getNameWithoutExtension(imageData.getServer().getMetadata().getName())
+def pathOutput = buildFilePath(localPath, '', name)
+mkdirs(pathOutput)
+
+// Define output resolution
+double requestedPixelSize = 1.0
+// Convert to downsample
+double downsample = requestedPixelSize / imageData.getServer().getPixelCalibration().getAveragedPixelSize()
+
+// Create an ImageServer where the pixels are derived from annotations
+def labelServer = new LabeledImageServer.Builder(imageData)
+    .backgroundLabel(0, ColorTools.BLACK) // Specify background label (usually 0 or 255)
+    .downsample(downsample)    // Choose server resolution; this should match the resolution at which tiles are exported
+    .addLabel('Adipocyte', 1, ColorTools.WHITE)      // One has to set a class (Polygon is not a class, when import from geoJSON) - set to class 'Other' when not using annotations
+    .multichannelOutput(false)  // If true, each label is a different channel (required for multiclass probability)
+    .build()
+
+// Create an exporter that requests corresponding tiles from the original & labeled image servers
+new TileExporter(imageData)
+    .downsample(1)     // Define export resolution
+    .imageExtension('.png')     // Define file extension for original pixels (often .tif, .jpg, '.png' or '.ome.tif')
+    .tileSize(tileSize)              // Define size of each tile, in pixels
+    .labeledServer(labelServer) // Define the labeled image server to use (i.e. the one we just built)
+    .annotatedTilesOnly(true)  
+    .overlap(0)                
+    .writeTiles(pathOutput)     // Write tiles to the specified directory
+print 'Done!'
+```
+Then click "Run" in the menu bar of the Script Editor and select "Run"
+You then get a folder in the path pointed to by the "localPath" variable with the tile and the corresponding mask, these can be used for training the U-net
+
