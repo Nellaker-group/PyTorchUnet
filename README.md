@@ -99,9 +99,9 @@ double downsample = requestedPixelSize / imageData.getServer().getPixelCalibrati
 
 // Create an ImageServer where the pixels are derived from annotations
 def labelServer = new LabeledImageServer.Builder(imageData)
-    .backgroundLabel(0, ColorTools.BLACK) // Specify background label (usually 0 or 255)
+    .backgroundLabel(0, ColorTools.WHITE) // Specify background label (usually 0 or 255)
     .downsample(downsample)    // Choose server resolution; this should match the resolution at which tiles are exported
-    .addLabel('Adipocyte', 1, ColorTools.WHITE)      // One has to set a class (Polygon is not a class, when import from geoJSON) - set to class 'Other' when not using annotations
+    .addLabel('Adipocyte', 1, ColorTools.BLACK)      // One has to set a class (Polygon is not a class, when import from geoJSON) - set to class 'Other' when not using annotations
     .multichannelOutput(false)  // If true, each label is a different channel (required for multiclass probability)
     .build()
 
@@ -118,4 +118,4 @@ print 'Done!'
 ```
 Then click "Run" in the menu bar of the Script Editor and select "Run"
 You then get a folder in the path pointed to by the "localPath" variable with the tile and the corresponding mask, these can be used for training the U-net
-
+The training is coded so that in the masks used for training the adipocytes are black and the background are white
