@@ -3,63 +3,26 @@
 U-net implementation in PyTorch of Craig Glastonbury's adipocyte pipeline in Keras
 https://github.com/GlastonburyC/Adipocyte-U-net
 
-So far it is doing binary segmentation (adipocyte v. non-adipocyte). The training data is collages of images (grayscale, 1 byte per pixel) and corresponding masks.
-The files are stored as .npy files, one for each cohort (GTEx, ENDOX, julius/MOBB and fatdiva).
-
-The montages consist of this many 1024x1024 tiles:
-
-TRAINING
-fatdiva: (6144 // 1024) * (10240 // 1024) = 60 tiles
-gtex: (76500 // 1024) * (17000 // 1024) = 1184 tiles
-endox: (9216 // 1024) * (5120 // 1024) = 45 tiles
-julius/MOBB: (15360 // 1024) * (18432 // 1024) = 270 tiles (NOTICE THIS DATASET IS NOT H&E and therefore visually very different)
-
-1184 tiles + 270 tiles + 60 tiles + 45 tiles = 1559 tiles
-
-VALIDATION
-fatdiva: (2048 // 1024) * (4096 // 1024) = 8
-gtex: (8500 // 1024) * (6800 // 1024) =  48
-endox: (7168 // 1024) * (2048 // 1024) = 14
-julius/MOBB: (3840 // 1024) * (1024 // 1024) = 3 
-
-8 tiles + 48 tiles + 14 tiles + 3 tiles = 73 tiles
-
-##################################
-
-(04-05-2022)
-
-I have added zoom functionality (using --zoomFile) scaling datasets to a reference dataset, example:
-endox 0.2500 reference
-gtex 0.4942
-fatdiva 0.6400
-
-For doing preditions one has to specify the dataset one wants to predict on (for example "gtex", "endox" or "fatdiva").
+It does training for a binary segmentation (adipocyte v. non-adipocyte) U-net model. The training data is tiles with corresponding masks.
+The training tiles should preferably be stored as PNG files (as these images are not compressed and therefore do not change pixel values because of compression).
 For training folders should have same names as datasets in zoom file.
 Example:
-
-all_annotations/
-all_annotations/endox
-all_annotations/endox/trn_imgs
-all_annotations/endox/vld_imgs
-all_annotations/endox/trn_msks
-all_annotations/endox/vld_msks
-all_annotations/gtex
-all_annotations/gtex/trn_imgs
-all_annotations/gtex/vld_imgs
-all_annotations/gtex/trn_msks
-all_annotations/gtex/vld_msks
-
-
-###############################
-
-(13-12-2024)
+```
+folder/
+folder/train/endox/image.png
+folder/train/endox/mask_image.png
+folder/val/endox/image1.png
+folder/val/endox/mask_image1.png
+```
+The names of the datasets in the "train/" and "val/" folders MUST correpsond to the name in the zoomFile.
+Currently this only works for tiles that are **1024x1024 pixels in size.**
 
 Example run:
-
-python -u main.py --gpu 0 --mode train --seed 36232 --trainDir /gpfs3/well/lindgren/users/swf744/adipocyte/segmentation/all_annotations_JPGwithBootstrapV2_munichLeipzigHohenheimV2_noFatdivaV2_cleanAnno_withTest/train/ --valDir /gpfs3/well/lindgren/users/swf744/adipocyte/segmentation/all_annotations_JPGwithBootstrapV2_munichLeipzigHohenheimV2_noFatdivaV2_cleanAnno_withTest/train/ --imageDir 1 --epochs 200 --tiles 200 --augment 1 --optimiser 1 --gamma 0.5 --stepSize 30 --torchSeed 456546 --LR 0.0001 --frankenstein 1 --normFile weights/normSeqTiles_ep60t2022_02_22-125709g0.5s865au1op1st30sB0LR0.0001fr0.norm --512 0 --inputChannels 3 --zoomFile zoomFileMunichLeipzigHohenheim.txt
-
+```
+python -u main.py --gpu 0 --mode train --seed 36232 --trainDir train/ --valDir val/ --imageDir 1 --epochs 200 --tiles 200 --augment 1 --optimiser 1 --gamma 0.5 --stepSize 30 --torchSeed 456546 --LR 0.0001 --frankenstein 1 --normFile normSeqTiles_ep60t2022_02_22-125709g0.5s865au1op1st30sB0LR0.0001fr0.norm --512 0 --inputChannels 3 --zoomFile zoomFile.txt
+```
 Command line options explained:
-
+```
 --gpu, help='which GPU to run on', type=str
 --mode, help='train or predict', type=str
 --tiles, help='how many tiles to use for training', type=int, default=200
@@ -69,7 +32,7 @@ Command line options explained:
 --preDir, help='path of directory for predictions', type=str
 --imageDir, help='if training data is directory with images', type=int
 --epochs, help='number of epochs', type=int
---gamma, help='number of epochs', type=float, default=0
+--gamma, help='for decaying learning rate - only for training', type=float
 --weights, help='path to weights', type=str
 --augment, help='whether to augment training', type=int, default=0
 --optimiser, help='which optimiser to use, (cyclicLR=0, stepLR=1)', type=int, default=0
@@ -87,3 +50,65 @@ Command line options explained:
 --512, help='image size is 512, cuts existing 1024x1024 tiles into 4 bits', type=int, default=0
 --predThres, help='threshold for predictions and creating mask - default is 0.8', type=float, default=0.8
 --dirtyPredict, help='a nasty dirty way of doing predictions on a test set disguised as validation', type=int, default=0
+```
+
+# How to annotate
+
+Open your microscope file with adipose tissue in QuPath
+
+Click on the "Annotations" on the left > Click the button with three vertical dots (in lower right corner of the box) > Click "Add/Remove..." > Click "Add Class" > enter "Adipocyte" as Class Name and click OK
+Click on the cog wheel icon ("Preferences") > In that tab click on Viewer (and scroll down) > Then deselect "Grid Spacing in um" and change "Grid spacing X" and "Grid spacing Y" to the right values (in my case 1024)
+Then click on the grid icon ("Show grid", next to the cog wheel icon) to show the grid imposed on the whole slide image
+In the "Annotations" tab click on the "Adipocyte" class then click on the wand icon
+
+Fill in the adipocyte in a chosen tile holding SHIFT+CTRL and then filling in the adipocyte with left click
+You can delete by holding ALT and then removing with left click
+The Brush icon can also be click for a regular brush without any automation (holding SHIFT+CTRL or ALT works here as well)
+
+When you are done with a tile make sure the drawn polygons in the Annotations tab have the class "Adipocyte"
+If they do not select all those (you can select more holding CTRL or SHIFT and then clicking) and then select the "Adipocyte" then press the "Set class" button
+
+Then click on "Automate" in the menu bar then select "Show script editor" Open a New Script
+Use the following groovy script (change the variables "localPath" and "tileSize"):
+
+```
+import qupath.lib.images.servers.LabeledImageServer
+
+def imageData = getCurrentImageData()
+// Define path where to store tiles on your local computer (if Windows you need "\\" instead of "\")
+def localPath = ""
+// Define size of tiles, right now the training only works with tiles of size 1024x1024
+def tileSize = 1024
+
+// Define output path (relative to project)
+def name = GeneralTools.getNameWithoutExtension(imageData.getServer().getMetadata().getName())
+def pathOutput = buildFilePath(localPath, '', name)
+mkdirs(pathOutput)
+
+// Define output resolution
+double requestedPixelSize = 1.0
+// Convert to downsample
+double downsample = requestedPixelSize / imageData.getServer().getPixelCalibration().getAveragedPixelSize()
+
+// Create an ImageServer where the pixels are derived from annotations
+def labelServer = new LabeledImageServer.Builder(imageData)
+    .backgroundLabel(0, ColorTools.WHITE) // Specify background label (usually 0 or 255)
+    .downsample(downsample)    // Choose server resolution; this should match the resolution at which tiles are exported
+    .addLabel('Adipocyte', 1, ColorTools.BLACK)      // One has to set a class (Polygon is not a class, when import from geoJSON) - set to class 'Other' when not using annotations
+    .multichannelOutput(false)  // If true, each label is a different channel (required for multiclass probability)
+    .build()
+
+// Create an exporter that requests corresponding tiles from the original & labeled image servers
+new TileExporter(imageData)
+    .downsample(1)     // Define export resolution
+    .imageExtension('.png')     // Define file extension for original pixels (often .tif, .jpg, '.png' or '.ome.tif')
+    .tileSize(tileSize)              // Define size of each tile, in pixels
+    .labeledServer(labelServer) // Define the labeled image server to use (i.e. the one we just built)
+    .annotatedTilesOnly(true)  
+    .overlap(0)                
+    .writeTiles(pathOutput)     // Write tiles to the specified directory
+print 'Done!'
+```
+Then click "Run" in the menu bar of the Script Editor and select "Run"
+You then get a folder in the path pointed to by the "localPath" variable with the tile and the corresponding mask, these can be used for training the U-net
+The training is coded so that in the masks used for training the adipocytes are black and the background are white
