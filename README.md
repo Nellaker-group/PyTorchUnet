@@ -15,6 +15,7 @@ folder/val/endox/image.png
 folder/val/endox/mask_image.png
 ```
 The names of the datasets in the "train/" and "val/" folders MUST correpsond to the name in the zoomFile.
+Currently this only works for tiles that are **1024x1024 pixels in size.**
 
 Example run:
 ```
