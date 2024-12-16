@@ -74,7 +74,7 @@ def main():
     prs.add_argument('--preDir', help='path of directory for predictions', type=str)
     prs.add_argument('--imageDir', help='if training data is directory with images', type=int)
     prs.add_argument('--epochs', help='number of epochs', type=int)
-    prs.add_argument('--gamma', help='number of epochs', type=float, default=0)
+    prs.add_argument('--gamma', help='for decaying learning rate - only for training', type=float)
     prs.add_argument('--weights', help='path to weights', type=str)
     prs.add_argument('--augment', help='whether to augment training', type=int, default=0)
     prs.add_argument('--optimiser', help='which optimiser to use, (cyclicLR=0, stepLR=1)', type=int, default=0)
