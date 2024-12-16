@@ -11,8 +11,8 @@ Example:
 folder/
 folder/train/endox/image.png
 folder/train/endox/mask_image.png
-folder/val/endox/image.png
-folder/val/endox/mask_image.png
+folder/val/endox/image1.png
+folder/val/endox/mask_image1.png
 ```
 The names of the datasets in the "train/" and "val/" folders MUST correpsond to the name in the zoomFile.
 Currently this only works for tiles that are **1024x1024 pixels in size.**
