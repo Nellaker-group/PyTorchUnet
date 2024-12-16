@@ -19,7 +19,7 @@ Currently this only works for tiles that are **1024x1024 pixels in size.**
 
 Example run:
 ```
-python -u main.py --gpu 0 --mode train --seed 36232 --trainDir /gpfs3/well/lindgren/users/swf744/adipocyte/segmentation/all_annotations_JPGwithBootstrapV2_munichLeipzigHohenheimV2_noFatdivaV2_cleanAnno_withTest/train/ --valDir /gpfs3/well/lindgren/users/swf744/adipocyte/segmentation/all_annotations_JPGwithBootstrapV2_munichLeipzigHohenheimV2_noFatdivaV2_cleanAnno_withTest/train/ --imageDir 1 --epochs 200 --tiles 200 --augment 1 --optimiser 1 --gamma 0.5 --stepSize 30 --torchSeed 456546 --LR 0.0001 --frankenstein 1 --normFile weights/normSeqTiles_ep60t2022_02_22-125709g0.5s865au1op1st30sB0LR0.0001fr0.norm --512 0 --inputChannels 3 --zoomFile zoomFileMunichLeipzigHohenheim.txt
+python -u main.py --gpu 0 --mode train --seed 36232 --trainDir train/ --valDir val/ --imageDir 1 --epochs 200 --tiles 200 --augment 1 --optimiser 1 --gamma 0.5 --stepSize 30 --torchSeed 456546 --LR 0.0001 --frankenstein 1 --normFile normSeqTiles_ep60t2022_02_22-125709g0.5s865au1op1st30sB0LR0.0001fr0.norm --512 0 --inputChannels 3 --zoomFile zoomFile.txt
 ```
 Command line options explained:
 ```
@@ -32,7 +32,7 @@ Command line options explained:
 --preDir, help='path of directory for predictions', type=str
 --imageDir, help='if training data is directory with images', type=int
 --epochs, help='number of epochs', type=int
---gamma, help='number of epochs', type=float, default=0
+--gamma, help='for decaying learning rate - only for training', type=float
 --weights, help='path to weights', type=str
 --augment, help='whether to augment training', type=int, default=0
 --optimiser, help='which optimiser to use, (cyclicLR=0, stepLR=1)', type=int, default=0
