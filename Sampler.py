@@ -336,7 +336,7 @@ class ImageSamplerUniformFrankenstein(Sampler):
 
 
 
-class ImageSamplerUniformFrankensteinEmil(Sampler):
+class ImageSamplerUniformFrankensteinV3(Sampler):
     """Samples 4 pieces of tile randomly from four images from the same dataset and stitches them together to one tile, with replacement.
     Arguments:
         data_source (Dataset): dataset to sample from

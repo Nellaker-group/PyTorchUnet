@@ -12,10 +12,8 @@ import copy
 import numpy as np
 from torch.utils.data.sampler import Sampler
 import matplotlib.pyplot as plt
-
 from Dataset import GetDataMontage, GetDataFolder
 from loss import calc_loss, calc_loss_val
-
 
 def print_metrics(metrics, epoch_samples, phase, f, lr):
     outputs = []
@@ -25,8 +23,6 @@ def print_metrics(metrics, epoch_samples, phase, f, lr):
     outputs.append("LR: {:e}".format(lr[0]))        
     print("{}: {}".format(phase, ", ".join(outputs)))
     print("{}: {}".format(phase, ", ".join(outputs)),file=f)
-
-
 
 def print_metrics_val(metrics, epoch_samples_dict, phase, f, lr):
     outputs = []
@@ -42,7 +38,6 @@ def print_metrics_val(metrics, epoch_samples_dict, phase, f, lr):
             count = 0
             outputs = []
         
-
 # dumps first tile from training with its predicted mask and ground truth mask - uses pred threshold from predctions
 def dump_predictions(labels,outputs,epoch,preName,phase,pred_threshold,shape=1024):
     labTmp=labels[0].detach().cpu().numpy()
@@ -56,7 +51,6 @@ def dump_predictions(labels,outputs,epoch,preName,phase,pred_threshold,shape=102
     else:
         plt.imsave("crops"+preName+"/valLabels_epoch"+str(epoch)+".png",  labTmp[0,0:shape,0:shape])
         plt.imsave("crops"+preName+"/valPredicted_epoch"+str(epoch)+".png", outTmp[0,0:shape,0:shape])
-
         
 def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, whichOptim, pred_threshold, num_epochs=25):
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -71,9 +65,8 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, wh
         for phase in ['train', 'val']:
             writePred=0
             if phase == 'train':
-                # emil moved scheduler step to after optimiszer step according to pytorch documentation
+                # moved scheduler step to after optimiszer step according to pytorch documentation
                 # https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
-                # scheduler.step()
                 for param_group in optimizer.param_groups:
                     print("LR", param_group['lr'])
                 model.train()  # Set model to training mode
@@ -135,7 +128,7 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, wh
                 print("saving best model")
                 best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(model.state_dict())
-        # emil moved this to here in accordance with HAPPY pipeline - but only for the exponential LR
+        # moved this to here in accordance with HAPPY pipeline - but only for the exponential LR
         if whichOptim == 1:
             scheduler.step()
         time_elapsed = time.time() - since
@@ -144,4 +137,3 @@ def train_model(model, dataloaders, device, optimizer, scheduler, f, preName, wh
     # load best model weights
     model.load_state_dict(best_model_wts)
     return model
-

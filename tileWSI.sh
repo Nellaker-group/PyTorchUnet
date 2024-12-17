@@ -1,17 +1,5 @@
 #!/bin/bash
 
-## apparently .csn files (Leica files) are created according to the dimensions of miscropcopse
-## however often the actual image is much smaller than that meaning, there is a lot of empty space in the image
-## to get to know the location of the actual image within this one has to run openslide-show-properties 
-## and then look at openslide.bounds-x and openslide.bounds-y
-## They are The X and Y coordinate of the rectangle bounding the non-empty region of the slide.
-## More can also be seen here:
-## https://github.com/openslide/openslide-python/issues/48
-
-## WHEN THERE ARE MORE IMAGES IN .scn FILE, I AM NOT SURE WHICH ONE IS READ WITH OPENSLIDE IN PYTHON??
-
-## module load OpenSlide/3.4.1-GCCcore-8.2.0-largefiles
-
 FILE="$1"
 DIR="$2"
 IF512="$3"

@@ -16,7 +16,7 @@ def draw_polygons_from_mask(mask,X,Y):
     for contour in contours:
         # Flip from (row, col) representation to (x, y)
         # and subtract the padding pixel
-        # Emil has added X and Y coordinates to get global WSI coordinates
+        # added X and Y coordinates to get global WSI coordinates
         for i in range(len(contour)):
             row, col = contour[i]
             contour[i] = (col - 1 + X, row - 1 + Y)

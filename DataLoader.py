@@ -6,7 +6,7 @@ from torch.utils.data.sampler import Sampler
 import os
 
 from Dataset import GetDataMontage, GetDataFolder
-from Sampler import MontageSamplerUniform, MontageSamplerUniformFrankenstein, MontageSamplerDatasetSize, ImageSamplerUniform, ImageSamplerUniformFrankenstein, ImageSamplerUniformFrankensteinV2, ImageSamplerUniformFrankensteinEmil, ImageSamplerDatasetSize, ValSampler, ImageValSampler
+from Sampler import MontageSamplerUniform, MontageSamplerUniformFrankenstein, MontageSamplerDatasetSize, ImageSamplerUniform, ImageSamplerUniformFrankenstein, ImageSamplerUniformFrankensteinV2, ImageSamplerUniformFrankensteinV3, ImageSamplerDatasetSize, ValSampler, ImageValSampler
 
 def get_dataloader(trainDir, valDir,imageDir,preName,ifAugment,noTiles,augSeed,ifSizeBased,frank,inputChannels,normFile,input512,zoomFile):
 
@@ -48,7 +48,7 @@ def get_dataloader(trainDir, valDir,imageDir,preName,ifAugment,noTiles,augSeed,i
         elif frank == 1:
             samplie_train = ImageSamplerUniformFrankensteinV2(train_set, sample_size_train, input_size, 0)
         elif frank == 2:
-            samplie_train = ImageSamplerUniformFrankensteinEmil(train_set, sample_size_train, input_size, 0)
+            samplie_train = ImageSamplerUniformFrankensteinV3(train_set, sample_size_train, input_size, 0)
         else:
             samplie_train = ImageSamplerUniform(train_set, sample_size_train, input_size, 0)
         samplie_val = ImageValSampler(val_set,  input_size, 0)
