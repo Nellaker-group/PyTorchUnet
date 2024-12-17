@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, datasets, models
 import numpy as np
-import cv2
+from PIL import Image
 import os
 import sys
 import math
@@ -43,7 +43,7 @@ class GetDataMontage(Dataset):
             self.datasets[str(count)] = file.split("_")[0]
             im = np.load(pathDir + file)
             newFile = file.replace(".npy","_mask.npy")
-            #because empty spaces are 1 and adipocytes 0 originally
+            # because empty spaces are 1 and adipocytes 0 originally
             mask = 1-np.load(pathDir + newFile)
             image_list.append(im)
             mask_list.append(mask)
@@ -190,22 +190,30 @@ class GetDataFolder(Dataset):
                 if not (".png" in file or ".jpg" in file):
                     continue
                 if inputChannels == 1:
-                    im = cv2.imread(pathDir + "/" + directory + "/" + file, cv2.IMREAD_GRAYSCALE)
+                    # changed from cv2.imread to using the Pillow (PIL) library
+                    im = Image.open(pathDir + "/" + directory + "/" + file).convert("L")
+                    im = np.array(im)
                     assert np.shape(im) != ()
                     im = im.astype(np.float32)
                     if(np.shape(im)>(1024,1024)):
                         im = im[0:1024,0:1024]
                 else:
-                    im = cv2.imread(pathDir + "/" + directory + "/" + file)
+                    # changed from cv2.imread to using the Pillow (PIL) library
+                    im = Image.open(pathDir + "/" + directory + "/" + file)
+                    im = np.array(im)
+                    im = im[..., ::-1]                    
                     assert np.shape(im) != ()
                     im = im.astype(np.float32)
                     if(np.shape(im)>(1024,1024,3)):
                         im = im[0:1024,0:1024,0:3]
                 # if mask exists as png and tile a jpg
                 if os.path.exists(pathDir + "/" + directory + "/mask_" + file):
-                    mask = cv2.imread(pathDir + "/" + directory + "/mask_" + file, cv2.IMREAD_GRAYSCALE)
+                    # changed from cv2.imread to using the Pillow (PIL) library
+                    mask = Image.open(pathDir + "/" + directory + "/mask_" + file).convert("L")
+                    mask = np.array(mask)
                 elif os.path.exists(pathDir + "/" + directory + "/mask_" + file.replace(".jpg",".png")):
-                    mask = cv2.imread(pathDir + "/" + directory + "/mask_" + file.replace(".jpg",".png"), cv2.IMREAD_GRAYSCALE)
+                    mask = Image.open(pathDir + "/" + directory + "/mask_" + file.replace(".jpg",".png")).convert("L")
+                    mask = np.array(mask)
                 assert np.shape(mask) != ()
                 # these might cause issues as we are working with .jpeg files currently - that do not store binary masks well, as the pixel values are not exactly 255 and 0
                 assert np.max(mask) == 255 or np.min(mask) == 0
@@ -323,8 +331,9 @@ class GetDataFolder(Dataset):
             mask = self.target_masks[data][i] 
         choice=0
         if self.inputChannels == 3:
-            #this makes the image being print correctly and is needed for the albumentations augs
-            image = cv2.cvtColor(image/255.0, cv2.COLOR_RGB2BGR)
+            # this makes the image being print correctly and is needed for the albumentations augs
+            # changed from cv2.imread to using the Pillow (PIL) library
+            image = image/255.0
         if first == 1:
             # crops from first run
             if self.whichData=="train":
@@ -334,16 +343,16 @@ class GetDataFolder(Dataset):
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+dataName+".png", image)
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+dataName+"_mask.png", mask)
         if self.inputChannels == 3:
-            #this makes the image being print correctly
+            # this makes the image being print correctly
             image = image*255
         # only augments training images - does 50 % of the time - rotates, flips, blur or noise
         if self.whichData=="train" and self.ifAugment:
-            #because gaussNoise and RandomBrightness only made for floats between 0 and 1
+            # because gaussNoise and RandomBrightness only made for floats between 0 and 1
             image = image/255.0
             image,mask,replay,choice,crop = albumentationAugmenter(image,mask,self.epochs)
             image = image*255.0
         if self.inputChannels == 3:
-            #this makes the image being print correctly
+            # this makes the image being print correctly
             image = image/255.0
             assert np.shape(image) == (1024,1024,3) or np.shape(image) == (512,512,3)
             assert np.shape(mask) == (1024,1024) or np.shape(mask) == (512,512)
@@ -421,7 +430,7 @@ class GetDataSeqTilesFolderPred(Dataset):
                             datasetFound = 1
                         zoomDict[d0] = float(z0)
             zf.close()
-        ## the dataset denoted as the target dataset has to be in the zoomFile
+        # the dataset denoted as the target dataset has to be in the zoomFile
         if(zoomFile!=""):
             assert datasetFound == 1
         for file in files:
@@ -430,13 +439,18 @@ class GetDataSeqTilesFolderPred(Dataset):
             print("file being read:")
             print(file)
             if inputChannels == 1:
-                im = cv2.imread(pathDir + "/" + file, cv2.IMREAD_GRAYSCALE)
+                # changed from cv2.imread to using the Pillow (PIL) library
+                im = Image.open(pathDir + "/" + file).convert("L")
+                im = np.array(im)
                 assert np.shape(im) != ()
                 im = im.astype(np.float32)
                 if(np.shape(im)>(1024,1024)):
                     im = im[0:1024,0:1024]
             else:
-                im = cv2.imread(pathDir + "/" + file)
+                # changed from cv2.imread to using the Pillow (PIL) library
+                im = Image.open(pathDir + "/" + file)
+                im = np.array(im)
+                im = im[..., ::-1]
                 # sometimes this causes an issue on certian G nodes
                 assert np.shape(im) != (), "problem with "+file
                 im = im.astype(np.float32)
