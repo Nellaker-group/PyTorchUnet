@@ -108,7 +108,7 @@ class GetDataMontage(Dataset):
                 plt.imsave("crops"+self.preName+"/val_epochs"+str(self.epochs)+"_"+dataName+"_"+str(x)+"_"+str(y)+"_mask.png", mask)
         # only augments training images - does 50 % of the time - rotates, flips, blur or noise
         if self.whichData=="train" and self.ifAugment:
-            #because gaussNoise and RandomBrightness only made for floats between 0 and 1
+            # because gaussNoise and RandomBrightness only made for floats between 0 and 1
             image = image/255.0
             image,mask,replay,choice,crop = albumentationAugmenter(image,mask,self.epochs)
             image = image*255.0
